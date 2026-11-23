@@ -20,6 +20,13 @@ from dca_calculator import (
     render_dca_summary_cards,
     render_dca_table_html,
 )
+from macro_dashboard import (
+    MACRO_CATALOG,
+    build_macro_trend_chart,
+    load_macro_dashboard_data,
+    render_macro_category_grid,
+    render_macro_regime_banner,
+)
 from monopoly_screener import (
     analyze_custom_ticker_cached,
     build_stock_financial_chart,
@@ -124,19 +131,19 @@ market_buy_idx = compute_market_buy_index(data)
 kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S KST")
 
 # ---------------- Top-Most Lazy Navigation (Only runs the selected page for fast Cloud load!) ----------------
-nav_options = ["📊 시장 현황", "👑 독점 기업", "🧮 분할 매수"]
+nav_options = ["📊 시장", "👑 독점주", "🧮 분할매수", "🌍 거시지표"]
 active_page = st.segmented_control(
     "메뉴",
     options=nav_options,
-    default="📊 시장 현황",
+    default="📊 시장",
     selection_mode="single",
     label_visibility="collapsed",
     width="stretch",
 )
 if not active_page:
-    active_page = "📊 시장 현황"
+    active_page = "📊 시장"
 
-if active_page == "📊 시장 현황":
+if active_page == "📊 시장":
     # ---------------- 1. Hero Header + Market Buy Recommendation Index ----------------
     st.markdown(render_hero_html(kst_now, vix.get("price"), vix.get("change_pct", 0.0)), unsafe_allow_html=True)
     st.markdown(render_market_buy_index_card(market_buy_idx), unsafe_allow_html=True)
@@ -245,7 +252,7 @@ if active_page == "📊 시장 현황":
         else:
             st.info("공포·탐욕 히스토리 데이터를 일시적으로 불러오지 못했습니다.")
 
-elif active_page == "🧮 분할 매수":
+elif active_page == "🧮 분할매수":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">🧮 고점 대비 분할 매수 계산기</div>',
         unsafe_allow_html=True,
@@ -376,7 +383,7 @@ elif active_page == "🧮 분할 매수":
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
     st.plotly_chart(build_dca_chart(plan, currency=currency), width="stretch", theme=None)
 
-elif active_page == "👑 독점 기업":
+elif active_page == "👑 독점주":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">👑 독점 기업 및 매수 신호</div>',
         unsafe_allow_html=True,
@@ -466,6 +473,58 @@ elif active_page == "👑 독점 기업":
                     st.plotly_chart(build_stock_financial_chart(c_stock), width="stretch", theme=None)
                 except Exception as exc:
                     st.error(f"분석 실패: {exc}")
+
+elif active_page == "🌍 거시지표":
+    st.markdown(
+        '<div class="section-title" style="margin-top:8px;">🌍 글로벌 핵심 거시 지표</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "원/달러 환율 · 달러 인덱스(DXY) · 미국 10년물 국채(금리 & 가격) · WTI 유가 · 금 · 구리 · "
+        "비트코인 · 이더리움 · 필라델피아 반도체(SOX) · 코스피 실시간 추적"
+    )
+
+    with st.spinner("글로벌 거시 지표 15종을 불러오는 중..."):
+        macro_data = load_macro_dashboard_data()
+
+    st.markdown(render_macro_regime_banner(macro_data), unsafe_allow_html=True)
+
+    # Render grouped cards in catalog category order
+    seen_cats: list[str] = []
+    for m in MACRO_CATALOG:
+        if m["category"] not in seen_cats:
+            seen_cats.append(m["category"])
+
+    for cat in seen_cats:
+        cat_items = [macro_data[m["symbol"]] for m in MACRO_CATALOG if m["category"] == cat and m["symbol"] in macro_data]
+        if not cat_items:
+            continue
+        st.markdown(f'<div class="section-title" style="font-size:1.05rem;">{cat}</div>', unsafe_allow_html=True)
+        st.markdown(render_macro_category_grid(cat_items), unsafe_allow_html=True)
+
+    # Interactive 1-year trend chart for any macro indicator
+    available_items = [macro_data[m["symbol"]] for m in MACRO_CATALOG if m["symbol"] in macro_data]
+    if available_items:
+        st.markdown('<div class="section-title">📈 거시 지표 1년 상세 차트</div>', unsafe_allow_html=True)
+        mc1, mc2 = st.columns([2.2, 1.4], gap="medium")
+        with mc1:
+            macro_labels = [f"{it['name']} ({it['symbol']})" for it in available_items]
+            sel_macro_lbl = st.selectbox("차트로 볼 거시 지표 선택", options=macro_labels, index=0)
+            sel_macro = available_items[macro_labels.index(sel_macro_lbl)]
+        with mc2:
+            st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+            macro_chart_style = st.radio(
+                "거시 차트 스타일",
+                options=["캔들 차트", "라인 차트"],
+                index=0,
+                horizontal=True,
+                label_visibility="collapsed",
+            )
+        st.plotly_chart(
+            build_macro_trend_chart(sel_macro, chart_style=macro_chart_style),
+            width="stretch",
+            theme=None,
+        )
 
 st.caption(
     f"데이터 소스: Yahoo Finance ({sp500['symbol']}, {nasdaq['symbol']}) · {fg['source']} | "
