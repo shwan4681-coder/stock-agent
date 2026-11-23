@@ -376,23 +376,47 @@ def analyze_single_stock(
         meta["name_kr"] = info.get("shortName") or info.get("longName") or sym
         meta["sector"] = info.get("sector") or meta["sector"]
 
-    # Annual statements (Yahoo Finance provides 4~5 annual fiscal periods)
+    # Annual statements (Yahoo Finance provides 4~5 annual fiscal periods; reliable even when ticker.info is throttled)
     try:
         inc = ticker.income_stmt
     except Exception:
         inc = pd.DataFrame()
+    try:
+        bs = ticker.balance_sheet
+    except Exception:
+        bs = pd.DataFrame()
     try:
         cf = ticker.cashflow
     except Exception:
         cf = pd.DataFrame()
 
     rev_s = _pick_row(inc, ["Total Revenue", "Operating Revenue", "Revenue"])
+    gp_s = _pick_row(inc, ["Gross Profit"])
+    cor_s = _pick_row(inc, ["Cost Of Revenue", "Reconciled Cost Of Revenue"])
     op_s = _pick_row(inc, ["Operating Income", "Total Operating Income As Reported", "EBIT"])
+    ni_s = _pick_row(inc, ["Net Income", "Net Income Common Stockholders", "Net Income Continuous Operations"])
+    eps_s = _pick_row(inc, ["Diluted EPS", "Basic EPS"])
     fcf_s = _pick_row(cf, ["Free Cash Flow"])
+
+    eq_s = _pick_row(bs, ["Stockholders Equity", "Common Stock Equity", "Total Equity Gross Minority Interest"])
+    assets_s = _pick_row(bs, ["Total Assets"])
+    debt_s = _pick_row(bs, ["Total Debt", "Long Term Debt And Capital Lease Obligation", "Long Term Debt"])
+    net_debt_s = _pick_row(bs, ["Net Debt"])
+    ca_s = _pick_row(bs, ["Current Assets"])
+    cl_s = _pick_row(bs, ["Current Liabilities"])
+
+    def _latest_val(series: pd.Series | None) -> float | None:
+        if series is None or series.empty:
+            return None
+        s_sorted = series.sort_index()
+        for val in reversed(s_sorted.values):
+            f = _safe_float(val)
+            if f is not None:
+                return f
+        return None
 
     annual_rows = []
     if rev_s is not None:
-        # Sort chronological (oldest -> newest)
         rev_sorted = rev_s.sort_index()
         for dt_col, rev_val in rev_sorted.items():
             rv = _safe_float(rev_val)
@@ -407,6 +431,7 @@ def analyze_single_stock(
                 {
                     "year": yr_label,
                     "revenue": rv,
+                    "op_income": op_val,
                     "op_margin_pct": op_margin,
                     "fcf_margin_pct": fcf_margin_y,
                 }
@@ -436,12 +461,34 @@ def analyze_single_stock(
     )
     avg_op_margin = float(np.mean(valid_op_margins)) if valid_op_margins else latest_op_margin
 
-    # 3. Warren Buffett core fundamental criteria
-    roe_raw = _safe_float(info.get("returnOnEquity"))
-    roe_pct = roe_raw * 100.0 if roe_raw is not None else None
+    # 3. Warren Buffett core fundamental criteria (statements-backed so never N/A on Cloud)
+    latest_rev = annual_rows[-1]["revenue"] if annual_rows else _latest_val(rev_s)
+    latest_op_inc = annual_rows[-1]["op_income"] if annual_rows else _latest_val(op_s)
+    latest_ni = _latest_val(ni_s)
+    latest_eq = _latest_val(eq_s)
+    latest_assets = _latest_val(assets_s)
+    latest_debt = _latest_val(debt_s)
+    latest_net_debt = _latest_val(net_debt_s)
+    latest_ca = _latest_val(ca_s)
+    latest_cl = _latest_val(cl_s)
 
     gm_raw = _safe_float(info.get("grossMargins"))
     gross_margin_pct = gm_raw * 100.0 if gm_raw is not None else None
+    if gross_margin_pct is None and latest_rev and latest_rev > 0:
+        latest_gp = _latest_val(gp_s)
+        if latest_gp is None:
+            latest_cor = _latest_val(cor_s)
+            if latest_cor is not None:
+                latest_gp = latest_rev - latest_cor
+        if latest_gp is not None:
+            gross_margin_pct = latest_gp / latest_rev * 100.0
+
+    roe_raw = _safe_float(info.get("returnOnEquity"))
+    roe_pct = roe_raw * 100.0 if roe_raw is not None else None
+    roa_pct = (latest_ni / latest_assets * 100.0) if (latest_ni is not None and latest_assets and latest_assets > 0) else None
+    negative_equity_buyback = bool(latest_eq is not None and latest_eq <= 0 and latest_ni is not None and latest_ni > 0)
+    if roe_pct is None and not negative_equity_buyback and latest_ni is not None and latest_eq and latest_eq > 0:
+        roe_pct = latest_ni / latest_eq * 100.0
 
     fcf_info = _safe_float(info.get("freeCashflow"))
     rev_info = _safe_float(info.get("totalRevenue"))
@@ -451,24 +498,55 @@ def analyze_single_stock(
         if valid_fcf:
             fcf_margin_pct = valid_fcf[-1]
 
-    dte = _safe_float(info.get("debtToEquity"))  # Yahoo returns percentage e.g. 14.3 means 14.3%
     current_ratio = _safe_float(info.get("currentRatio"))
+    if current_ratio is None and latest_ca is not None and latest_cl and latest_cl > 0:
+        current_ratio = latest_ca / latest_cl
+
+    dte = _safe_float(info.get("debtToEquity"))
+    net_debt_to_op = (
+        (latest_net_debt / latest_op_inc)
+        if (latest_net_debt is not None and latest_op_inc and latest_op_inc > 0)
+        else ((latest_debt / latest_op_inc) if (latest_debt is not None and latest_op_inc and latest_op_inc > 0) else None)
+    )
+    if dte is None and not negative_equity_buyback:
+        if latest_debt is not None and latest_eq and latest_eq > 0:
+            dte = latest_debt / latest_eq * 100.0
+        elif latest_debt is None and latest_eq and latest_eq > 0:
+            dte = 0.0
+
     forward_pe = _safe_float(info.get("forwardPE"))
+    if forward_pe is None:
+        latest_eps = _latest_val(eps_s)
+        if latest_eps and latest_eps > 0:
+            forward_pe = price / latest_eps
+
     peg = _safe_float(info.get("pegRatio")) or _safe_float(info.get("trailingPegRatio"))
+    peg_source = "Yahoo Finance"
+    if (peg is None or peg <= 0) and forward_pe is not None and forward_pe > 0:
+        eps_cagr = None
+        if eps_s is not None and len(eps_s.dropna()) >= 2:
+            es = eps_s.dropna().sort_index()
+            e_start, e_end = _safe_float(es.iloc[0]), _safe_float(es.iloc[-1])
+            n_yr = len(es) - 1
+            if e_start and e_end and e_start > 0 and e_end > 0 and n_yr > 0:
+                eps_cagr = ((e_end / e_start) ** (1.0 / n_yr) - 1.0) * 100.0
+        growth_base = eps_cagr if (eps_cagr is not None and eps_cagr >= 3.0) else rev_cagr_pct
+        if growth_base is not None and growth_base >= 3.0:
+            peg = forward_pe / growth_base
+            peg_source = "PER ÷ 성장률 자체 산출"
+    if peg is not None and peg <= 0:
+        peg = None
 
     # ---------------- 8-Criteria Scorecard (100 pts) ----------------
-    # 1) Management (12 pts)
     mgmt_pass = meta["mgmt_score"] >= 4
     mgmt_pts = 12 if meta["mgmt_score"] >= 5 else 9 if meta["mgmt_score"] >= 4 else 4
 
-    # 2) Revenue CAGR >= 20% (16 pts)
     rev_pass = rev_cagr_pct is not None and rev_cagr_pct >= 20.0
     if rev_cagr_pct is not None:
         rev_pts = 16 if rev_cagr_pct >= 20.0 else 11 if rev_cagr_pct >= 12.0 else 6 if rev_cagr_pct >= 7.0 else 2
     else:
         rev_pts = 5
 
-    # 3) Operating Margin >= 20% for multi-year (16 pts)
     op_all_pass = op_years_total >= 3 and op_years_pass == op_years_total
     if op_all_pass:
         op_pts = 16
@@ -479,30 +557,47 @@ def analyze_single_stock(
     else:
         op_pts = 3
 
-    # 4) Market Share >= 50% Monopoly/Oligopoly (16 pts)
     share_pct = meta["market_share_pct"]
     share_pass = share_pct >= 50
     share_pts = 16 if share_pct >= 70 else 13 if share_pct >= 50 else 5
 
-    # 5) Buffett ROE >= 15% (10 pts)
-    roe_pass = roe_pct is not None and roe_pct >= 15.0
-    roe_pts = 10 if (roe_pct is not None and roe_pct >= 20.0) else 8 if roe_pass else 3
+    if roe_pct is not None:
+        roe_pass = roe_pct >= 15.0
+        roe_pts = 10 if roe_pct >= 20.0 else 8 if roe_pass else 3
+        roe_display = f"{roe_pct:.1f}%"
+        roe_note = "주주 자본으로 얼마나 높은 이익을 복리로 창출하는지 측정"
+    elif negative_equity_buyback and roa_pct is not None:
+        roe_pass = roa_pct >= 10.0
+        roe_pts = 10 if roa_pct >= 15.0 else 8 if roe_pass else 4
+        roe_display = f"ROA {roa_pct:.1f}% (자사주 소각)"
+        roe_note = "대규모 자사주 소각으로 장부자본이 음수(-)인 주주환원 기업 · ROA로 대체 평가"
+    else:
+        roe_pass = False
+        roe_pts = 3
+        roe_display = "N/A"
+        roe_note = "주주 자본으로 얼마나 높은 이익을 복리로 창출하는지 측정"
 
-    # 6) Buffett Pricing Power: Gross Margin >= 40% (10 pts)
     gm_pass = gross_margin_pct is not None and gross_margin_pct >= 40.0
     gm_pts = 10 if (gross_margin_pct is not None and gross_margin_pct >= 55.0) else 8 if gm_pass else 3
 
-    # 7) Buffett Owner Earnings: FCF Margin >= 15% (10 pts)
     fcf_pass = fcf_margin_pct is not None and fcf_margin_pct >= 15.0
     fcf_pts = 10 if (fcf_margin_pct is not None and fcf_margin_pct >= 20.0) else 8 if fcf_pass else 3
 
-    # 8) Buffett Fortress Balance Sheet: Debt/Equity < 100% or Current Ratio >= 1.2 (10 pts)
     if dte is not None:
         debt_pass = dte <= 100.0
         debt_pts = 10 if dte <= 50.0 else 8 if dte <= 100.0 else 5 if (current_ratio and current_ratio >= 1.3) else 2
+        debt_display = "무차입 (D/E 0.0%)" if dte < 0.5 else f"D/E {dte:.1f}%"
+        debt_note = "금리 상승이나 경기 침체에도 흔들리지 않는 보수적 재무구조"
+    elif net_debt_to_op is not None:
+        debt_pass = net_debt_to_op <= 4.0
+        debt_pts = 10 if net_debt_to_op <= 2.0 else 8 if debt_pass else 4
+        debt_display = f"순부채/영업이익 {net_debt_to_op:.1f}x"
+        debt_note = "자사주 소각 음수자본 기업 · 영업이익 4년치 이내 순부채 상환 여부 평가"
     else:
         debt_pass = current_ratio is not None and current_ratio >= 1.2
         debt_pts = 7 if debt_pass else 4
+        debt_display = f"유동비율 {current_ratio:.2f}" if current_ratio else "N/A"
+        debt_note = "금리 상승이나 경기 침체에도 흔들리지 않는 보수적 재무구조"
 
     moat_score = int(mgmt_pts + rev_pts + op_pts + share_pts + roe_pts + gm_pts + fcf_pts + debt_pts)
 
@@ -596,9 +691,9 @@ def analyze_single_stock(
         {
             "title": "5. [버핏] 자기자본이익률 (ROE)",
             "passed": roe_pass,
-            "value": f"{roe_pct:.1f}%" if roe_pct is not None else "N/A",
-            "rule": "15% 이상",
-            "note": "주주 자본으로 얼마나 높은 이익을 복리로 창출하는지 측정",
+            "value": roe_display,
+            "rule": "15% 이상 (자사주소각 ROA 10%↑)",
+            "note": roe_note,
         },
         {
             "title": "6. [버핏] 가격결정력 (매출총이익률)",
@@ -617,9 +712,16 @@ def analyze_single_stock(
         {
             "title": "8. [버핏] 요새형 재무건전성 (부채비율)",
             "passed": debt_pass,
-            "value": f"D/E {dte:.1f}%" if dte is not None else (f"유동비율 {current_ratio:.2f}" if current_ratio else "N/A"),
-            "rule": "부채비율 100% 이하",
-            "note": "금리 상승이나 경기 침체에도 흔들리지 않는 보수적 재무구조",
+            "value": debt_display,
+            "rule": "D/E 100% 이하 또는 순부채 4x 이하",
+            "note": debt_note,
+        },
+        {
+            "title": "9. [밸류] 성장 대비 저평가 (PEG)",
+            "passed": peg is not None and 0 < peg <= 1.5,
+            "value": f"{peg:.2f}" if peg is not None else "N/A",
+            "rule": "1.5 이하 (1.0 이하 저평가)",
+            "note": f"PER을 성장률로 나눈 지표 · 1.5 이하는 성장성 대비 합리적 가격 ({peg_source})",
         },
     ]
 
@@ -642,9 +744,12 @@ def analyze_single_stock(
         "avg_op_margin": avg_op_margin,
         "latest_op_margin": latest_op_margin,
         "roe_pct": roe_pct,
+        "roa_pct": roa_pct,
+        "roe_display": roe_display,
         "gross_margin_pct": gross_margin_pct,
         "fcf_margin_pct": fcf_margin_pct,
         "dte": dte,
+        "debt_display": debt_display,
         "forward_pe": forward_pe,
         "peg": peg,
         "moat_score": moat_score,
@@ -732,22 +837,25 @@ def render_monopoly_table_html(stocks: list[dict]) -> str:
         rev_col = "#1d8f34" if (s["rev_cagr_pct"] is not None and s["rev_cagr_pct"] >= 20.0) else "#1d1d1f"
         op_str = f"{s['avg_op_margin']:.1f}% ({s['op_years_pass']}/{s['op_years_total']}년)" if s["avg_op_margin"] is not None else "-"
         op_col = "#1d8f34" if (s["op_years_total"] >= 3 and s["op_years_pass"] == s["op_years_total"]) else "#c96a00"
-        roe_str = f"{s['roe_pct']:.0f}%" if s["roe_pct"] is not None else "-"
+        roe_str = f"ROE {s['roe_pct']:.0f}%" if s["roe_pct"] is not None else (f"ROA {s['roa_pct']:.0f}%" if s.get("roa_pct") is not None else "ROE -")
         gm_str = f"{s['gross_margin_pct']:.0f}%" if s["gross_margin_pct"] is not None else "-"
         fcf_str = f"{s['fcf_margin_pct']:.0f}%" if s["fcf_margin_pct"] is not None else "-"
         rsi_str = f"{s['rsi']:.1f}" if s["rsi"] is not None else "-"
         rsi_col = "#1d8f34" if (s["rsi"] is not None and s["rsi"] <= 35) else "#d70015" if (s["rsi"] is not None and s["rsi"] >= 70) else "#1d1d1f"
         dd_col = "#1d8f34" if s["dd_pct"] <= -15 else "#0071e3" if s["dd_pct"] <= -8 else "#6e6e73"
         pe_str = f"{s['forward_pe']:.1f}x" if s["forward_pe"] is not None else "-"
+        peg_val = s.get("peg")
+        peg_str = f"{peg_val:.2f}" if peg_val is not None else "-"
+        peg_col = "#15803d" if (peg_val is not None and peg_val <= 1.5) else "#1d4ed8" if (peg_val is not None and peg_val <= 2.2) else "#b91c1c" if (peg_val is not None and peg_val > 2.5) else "#57534e"
 
         rows.append(
             f'<tr style="border-bottom:1px solid rgba(0,0,0,0.06);">'
             f'<td style="padding:13px 10px;"><b style="color:#1d1d1f; font-size:0.92rem;">{s["name_kr"]}</b> <span class="ticker-badge">{s["symbol"]}</span><div style="font-size:0.74rem; color:#6e6e73; margin-top:2px;">{s["moat_type"]} · 점유율 약 {s["market_share_pct"]}%</div></td>'
             f'<td style="padding:13px 8px; text-align:right; color:{rev_col}; font-weight:600; font-variant-numeric:tabular-nums;">{rev_str}</td>'
             f'<td style="padding:13px 8px; text-align:right; color:{op_col}; font-weight:600; font-variant-numeric:tabular-nums;">{op_str}</td>'
-            f'<td style="padding:13px 8px; text-align:center; font-size:0.78rem; color:#6e6e73; font-variant-numeric:tabular-nums;">ROE {roe_str}<br/>GM {gm_str} · FCF {fcf_str}</td>'
+            f'<td style="padding:13px 8px; text-align:center; font-size:0.78rem; color:#6e6e73; font-variant-numeric:tabular-nums;">{roe_str}<br/>GM {gm_str} · FCF {fcf_str}</td>'
             f'<td style="padding:13px 8px; text-align:right; color:#1d1d1f; font-weight:600; font-variant-numeric:tabular-nums;">${s["price"]:,.2f}<div style="font-size:0.74rem; color:{dd_col};">고점 {s["dd_pct"]:.1f}%</div></td>'
-            f'<td style="padding:13px 8px; text-align:center; font-variant-numeric:tabular-nums;"><span style="color:{rsi_col}; font-weight:600;">{rsi_str}</span><div style="font-size:0.72rem; color:#86868b;">Fwd {pe_str}</div></td>'
+            f'<td style="padding:13px 8px; text-align:center; font-variant-numeric:tabular-nums;"><span style="color:{rsi_col}; font-weight:600;">RSI {rsi_str}</span><div style="font-size:0.73rem; color:#78716c;">PER {pe_str} · <b style="color:{peg_col};">PEG {peg_str}</b></div></td>'
             f'<td style="padding:13px 8px; text-align:center; font-weight:700; color:#1d1d1f; font-variant-numeric:tabular-nums;">{s["moat_score"]}점</td>'
             f'<td style="padding:13px 10px; text-align:center;"><span style="display:inline-block; padding:4px 10px; border-radius:999px; font-size:0.74rem; font-weight:600; background:{sc}16; color:{sc};">{s["signal"]}</span><div style="font-size:0.72rem; color:#86868b; margin-top:3px;">{s["buy_reasons"][0]}</div></td>'
             f'</tr>'
@@ -767,7 +875,7 @@ def render_monopoly_table_html(stocks: list[dict]) -> str:
             <th style="padding:9px 8px; text-align:right;">영업이익률 (연속)</th>
             <th style="padding:9px 8px; text-align:center;">버핏 3대 지표</th>
             <th style="padding:9px 8px; text-align:right;">현재가 / 낙폭</th>
-            <th style="padding:9px 8px; text-align:center;">RSI / PER</th>
+            <th style="padding:9px 8px; text-align:center;">RSI · PER · PEG</th>
             <th style="padding:9px 8px; text-align:center;">해자점수</th>
             <th style="padding:9px 10px; text-align:center;">실시간 신호</th>
           </tr>
@@ -816,7 +924,7 @@ def render_stock_deep_dive_html(s: dict) -> str:
           <div style="font-size:0.84rem; color:#6e6e73; margin-top:4px;">{reasons_str}</div>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <div class="agent-stance" style="background:#f5f5f7; color:#1d1d1f;">8대 기준 {passed_cnt}/8 충족 · {s['moat_score']}점</div>
+          <div class="agent-stance" style="background:#f5f5f7; color:#1d1d1f;">9대 기준 {passed_cnt}/{len(s['checklist'])} 충족 · {s['moat_score']}점</div>
           <div class="agent-stance" style="background:{sc}16; color:{sc};">{s['signal']}</div>
         </div>
       </div>

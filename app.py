@@ -371,7 +371,7 @@ elif active_page == "👑 독점 기업":
     )
     st.caption(
         "경영진 · 연평균 매출성장 20%↑ · 영업이익률 다개년 20%↑ · 시장점유율 50%↑ · "
-        "워렌 버핏 4대 지표(ROE · 매출총이익률 · FCF 마진 · 부채비율) 및 실시간 매수 신호"
+        "워렌 버핏 4대 지표(ROE · 매출총이익률 · FCF 마진 · 부채비율) · PEG 지수 및 실시간 매수 신호"
     )
 
     with st.spinner("글로벌 독점·해자 우량주 30종목의 실시간 재무제표와 매수 신호를 스캔하는 중..."):
@@ -379,7 +379,7 @@ elif active_page == "👑 독점 기업":
 
     st.markdown(render_monopoly_summary_cards(monopoly_stocks), unsafe_allow_html=True)
 
-    f_col1, f_col2, f_col3 = st.columns([2.4, 1.2, 0.9], gap="small")
+    f_col1, f_col2, f_col3 = st.columns([2.6, 1.1, 0.8], gap="small")
     with f_col1:
         mono_filter = st.radio(
             "조건 필터",
@@ -387,6 +387,7 @@ elif active_page == "👑 독점 기업":
                 f"전체 ({len(monopoly_stocks)}종목)",
                 "🟢 강력 매수만",
                 "🔵 매수·분할매수",
+                "PEG 1.5 이하",
                 "매출 CAGR 20%↑",
                 "영업이익률 전 기간 20%↑",
             ],
@@ -408,6 +409,8 @@ elif active_page == "👑 독점 기업":
         filtered_stocks = [s for s in filtered_stocks if s["signal_code"] == "strong_buy"]
     elif "매수·분할매수" in mono_filter:
         filtered_stocks = [s for s in filtered_stocks if s["signal_code"] in ("strong_buy", "accumulate")]
+    elif "PEG 1.5" in mono_filter:
+        filtered_stocks = [s for s in filtered_stocks if s.get("peg") is not None and 0 < s["peg"] <= 1.5]
     elif "CAGR 20%" in mono_filter:
         filtered_stocks = [s for s in filtered_stocks if s["rev_cagr_pct"] is not None and s["rev_cagr_pct"] >= 20.0]
     elif "영업이익률" in mono_filter:
@@ -419,7 +422,7 @@ elif active_page == "👑 독점 기업":
 
     # Deep Dive for selected curated stock
     if monopoly_stocks:
-        st.markdown('<div class="section-title">🔍 종목별 8대 기준 상세 진단</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">🔍 종목별 9대 기준 상세 진단</div>', unsafe_allow_html=True)
         stock_labels = [
             f"{s['name_kr']} ({s['symbol']}) · {s['signal']} · {s['moat_score']}점"
             for s in monopoly_stocks
