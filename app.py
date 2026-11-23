@@ -16,6 +16,14 @@ from dca_calculator import (
     render_dca_summary_cards,
     render_dca_table_html,
 )
+from monopoly_screener import (
+    analyze_custom_ticker_cached,
+    build_stock_financial_chart,
+    render_monopoly_summary_cards,
+    render_monopoly_table_html,
+    render_stock_deep_dive_html,
+    scan_monopoly_universe,
+)
 from ui_components import (
     CUSTOM_CSS,
     build_fear_greed_history_chart,
@@ -115,9 +123,10 @@ kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S
 st.markdown(render_hero_html(kst_now, vix.get("price"), vix.get("change_pct", 0.0)), unsafe_allow_html=True)
 
 # ---------------- Main Navigation Tabs ----------------
-main_tab_dash, main_tab_dca = st.tabs([
+main_tab_dash, main_tab_dca, main_tab_monopoly = st.tabs([
     "📊 실시간 시장 대시보드",
     "🧮 분할 매수 계산기 (-5% ~ -30%)",
+    "👑 독점 기업 & 매수 신호",
 ])
 
 with main_tab_dash:
@@ -343,6 +352,86 @@ with main_tab_dca:
     # 3. Interactive bar + average cost curve chart
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
     st.plotly_chart(build_dca_chart(plan, currency=currency), width="stretch", theme=None)
+
+with main_tab_monopoly:
+    st.markdown(
+        '<div class="section-title">👑 글로벌 독점·과독점 기업 발굴 &amp; 워렌 버핏 기준 매수 신호</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "① 훌륭한 경영진 · ② 연평균 매출성장 20%↑ · ③ 영업이익률 5년 20%↑ · ④ 시장점유율 50%↑ 독점/과독점 · "
+        "⑤ 워렌 버핏 4대 지표(ROE 15%↑ · 매출총이익률 40%↑ · FCF마진 15%↑ · 보수적 부채비율) + 실시간 낙폭/RSI/PEG 매수 신호"
+    )
+
+    with st.spinner("글로벌 독점·해자 우량주 12종목의 실시간 재무제표와 기술 지표를 스캔하는 중..."):
+        monopoly_stocks = scan_monopoly_universe()
+
+    st.markdown(render_monopoly_summary_cards(monopoly_stocks), unsafe_allow_html=True)
+
+    f_col1, f_col2 = st.columns([3.0, 1.0])
+    with f_col1:
+        mono_filter = st.radio(
+            "필터",
+            options=[
+                "전체 후보 (12종목)",
+                "🟢 매수·분할매수 신호만",
+                "매출 CAGR 20% 이상",
+                "영업이익률 전 기간 20% 이상",
+            ],
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+    with f_col2:
+        if st.button("🔄 재무·신호 새로 스캔", width="stretch"):
+            scan_monopoly_universe.clear()
+            st.rerun()
+
+    filtered_stocks = monopoly_stocks
+    if "매수·분할매수" in mono_filter:
+        filtered_stocks = [s for s in monopoly_stocks if s["signal_code"] in ("strong_buy", "accumulate")]
+    elif "CAGR 20%" in mono_filter:
+        filtered_stocks = [s for s in monopoly_stocks if s["rev_cagr_pct"] is not None and s["rev_cagr_pct"] >= 20.0]
+    elif "영업이익률" in mono_filter:
+        filtered_stocks = [
+            s for s in monopoly_stocks if s["op_years_total"] >= 3 and s["op_years_pass"] == s["op_years_total"]
+        ]
+
+    st.markdown(render_monopoly_table_html(filtered_stocks), unsafe_allow_html=True)
+
+    # Deep Dive for selected curated stock
+    if monopoly_stocks:
+        st.markdown('<div class="section-title">🔍 종목별 8대 기준 상세 진단 &amp; 재무·주가 차트</div>', unsafe_allow_html=True)
+        stock_labels = [
+            f"{s['name_kr']} ({s['symbol']}) — {s['signal']} · 해자 {s['moat_score']}점"
+            for s in monopoly_stocks
+        ]
+        sel_label = st.selectbox("상세 분석할 독점 기업 선택", options=stock_labels, index=0)
+        sel_stock = monopoly_stocks[stock_labels.index(sel_label)]
+
+        st.markdown(render_stock_deep_dive_html(sel_stock), unsafe_allow_html=True)
+        st.plotly_chart(build_stock_financial_chart(sel_stock), width="stretch", theme=None)
+
+    # Custom US stock analyzer
+    with st.expander("🔎 목록에 없는 미국 종목 직접 검색 & 독점·버핏 기준 분석하기 (예: PLTR, NFLX, LLY, COST, AAPL)", expanded=False):
+        cc1, cc2, cc3, cc4 = st.columns([1.4, 1.2, 1.2, 1.0])
+        with cc1:
+            custom_sym = st.text_input("미국 티커 입력", value="PLTR", placeholder="예: AAPL, LLY, COST").strip().upper()
+        with cc2:
+            custom_share = st.slider("추정 시장점유율 (%)", min_value=10, max_value=100, value=55, step=5)
+        with cc3:
+            custom_mgmt = st.slider("경영진 평가 (1~5점)", min_value=1, max_value=5, value=4, step=1)
+        with cc4:
+            st.markdown("<div style='height:27px;'></div>", unsafe_allow_html=True)
+            run_custom = st.button("종목 분석", type="primary", width="stretch")
+
+        if run_custom and custom_sym:
+            with st.spinner(f"{custom_sym} 재무제표 및 매수 신호 분석 중..."):
+                try:
+                    c_stock = analyze_custom_ticker_cached(custom_sym, custom_share, custom_mgmt)
+                    st.markdown(render_stock_deep_dive_html(c_stock), unsafe_allow_html=True)
+                    st.plotly_chart(build_stock_financial_chart(c_stock), width="stretch", theme=None)
+                except Exception as exc:
+                    st.error(f"분석 실패: {exc}")
 
 st.caption(
     f"데이터 소스: Yahoo Finance ({sp500['symbol']}, {nasdaq['symbol']}) · {fg['source']} | "
