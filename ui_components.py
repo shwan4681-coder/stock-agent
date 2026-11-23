@@ -418,8 +418,9 @@ div[data-testid="stPlotlyChart"] {
   background: #faf9f6;
   border: 1px solid rgba(28, 25, 23, 0.09);
   border-radius: 22px;
-  padding: 10px 10px 4px 10px;
+  padding: 14px 18px 10px 18px;
   box-shadow: 0 4px 20px rgba(28, 25, 23, 0.05);
+  overflow: hidden;
 }
 
 /* Sidebar warm tone */
@@ -899,6 +900,7 @@ def build_nasdaq_chart(
         range=[y_min - y_pad, y_max + y_pad],
         tickformat=",.0f",
         side="right",
+        automargin=True,
         gridcolor="rgba(0, 0, 0, 0.06)",
         tickfont=dict(color="#6e6e73", size=11),
         row=1,
@@ -908,6 +910,7 @@ def build_nasdaq_chart(
         range=[0, 100],
         tickvals=[0, 30, 50, 70, 100],
         side="right",
+        automargin=True,
         gridcolor="rgba(0, 0, 0, 0.06)",
         tickfont=dict(color="#6e6e73", size=11),
         row=2,
@@ -917,12 +920,18 @@ def build_nasdaq_chart(
         range=[0, 100],
         tickvals=[0, 20, 50, 80, 100],
         side="right",
+        automargin=True,
         gridcolor="rgba(0, 0, 0, 0.06)",
         tickfont=dict(color="#6e6e73", size=11),
         row=3,
         col=1,
     )
+    x_span = max((sub.index[-1] - sub.index[0]).days, 10)
+    x_left = sub.index[0] - pd.Timedelta(days=max(3, int(x_span * 0.03)))
+    x_right = sub.index[-1] + pd.Timedelta(days=max(6, int(x_span * 0.06)))
     fig.update_xaxes(
+        range=[x_left, x_right],
+        automargin=True,
         gridcolor="rgba(0, 0, 0, 0.04)",
         tickfont=dict(color="#6e6e73", size=11),
         rangeslider_visible=False,
@@ -932,8 +941,8 @@ def build_nasdaq_chart(
             ann.font = dict(color="#1d1d1f", size=13)
 
     fig.update_layout(
-        height=720,
-        margin=dict(l=12, r=18, t=64, b=16),
+        height=740,
+        margin=dict(l=38, r=68, t=72, b=28),
         paper_bgcolor="#faf9f6",
         plot_bgcolor="#f5f2ec",
         font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),
@@ -1028,16 +1037,19 @@ def build_sp500_drawdown_chart(sp: dict, lookback_days: int = 252) -> go.Figure:
     fig.add_hline(y=-10, line_dash="dot", line_width=1.1, line_color="#c96a00", annotation_text=" -10% 조정", annotation_font=dict(color="#c96a00", size=11), row=2, col=1)
     fig.add_hline(y=-20, line_dash="dot", line_width=1.1, line_color="#d70015", annotation_text=" -20% 약세", annotation_font=dict(color="#d70015", size=11), row=2, col=1)
 
-    fig.update_yaxes(range=[y_min - y_pad, y_max + y_pad], tickformat=",.0f", side="right", gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=1, col=1)
-    fig.update_yaxes(range=[dd_min, 1.5], ticksuffix="%", side="right", gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=2, col=1)
-    fig.update_xaxes(gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11))
+    x_span = max((sub.index[-1] - sub.index[0]).days, 10)
+    x_left = sub.index[0] - pd.Timedelta(days=max(3, int(x_span * 0.03)))
+    x_right = sub.index[-1] + pd.Timedelta(days=max(6, int(x_span * 0.06)))
+    fig.update_yaxes(range=[y_min - y_pad, y_max + y_pad], tickformat=",.0f", side="right", automargin=True, gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=1, col=1)
+    fig.update_yaxes(range=[dd_min, 1.5], ticksuffix="%", side="right", automargin=True, gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=2, col=1)
+    fig.update_xaxes(range=[x_left, x_right], automargin=True, gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11))
     for ann in fig.layout.annotations:
         if ann.font is None or ann.font.color is None:
             ann.font = dict(color="#1d1d1f", size=13)
 
     fig.update_layout(
-        height=540,
-        margin=dict(l=12, r=18, t=64, b=16),
+        height=560,
+        margin=dict(l=38, r=68, t=72, b=28),
         paper_bgcolor="#faf9f6",
         plot_bgcolor="#f5f2ec",
         font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),
@@ -1080,12 +1092,15 @@ def build_fear_greed_history_chart(fg: dict) -> go.Figure | None:
         annotation_bgcolor=fg_color,
     )
 
-    fig.update_yaxes(range=[0, 100], tickvals=[0, 25, 50, 75, 100], side="right", gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11))
-    fig.update_xaxes(gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11))
+    x_span = max((hist["date"].iloc[-1] - hist["date"].iloc[0]).days, 10)
+    x_left = hist["date"].iloc[0] - pd.Timedelta(days=max(3, int(x_span * 0.03)))
+    x_right = hist["date"].iloc[-1] + pd.Timedelta(days=max(6, int(x_span * 0.06)))
+    fig.update_yaxes(range=[0, 100], tickvals=[0, 25, 50, 75, 100], side="right", automargin=True, gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11))
+    fig.update_xaxes(range=[x_left, x_right], automargin=True, gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11))
     fig.update_layout(
         title=dict(text="CNN 공포·탐욕 지수 1년 추이", font=dict(size=14, color="#1d1d1f")),
-        height=380,
-        margin=dict(l=12, r=18, t=48, b=16),
+        height=390,
+        margin=dict(l=38, r=68, t=54, b=28),
         paper_bgcolor="#faf9f6",
         plot_bgcolor="#f5f2ec",
         font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),

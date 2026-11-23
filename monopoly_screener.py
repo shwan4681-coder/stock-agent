@@ -923,18 +923,20 @@ def build_stock_financial_chart(s: dict) -> go.Figure:
         col=2,
     )
 
-    fig.update_yaxes(gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=1, col=1, secondary_y=False)
-    fig.update_yaxes(range=[0, max(75.0, max([r["op_margin_pct"] or 0 for r in ann] + [30]) * 1.2)], ticksuffix="%", gridcolor="rgba(0,0,0,0.03)", tickfont=dict(color="#1d8f34", size=11), row=1, col=1, secondary_y=True)
-    fig.update_yaxes(range=[y_min, y_max], tickprefix="$", side="right", gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=1, col=2)
-    fig.update_xaxes(gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11))
+    fig.update_yaxes(automargin=True, gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=1, col=1, secondary_y=False)
+    fig.update_yaxes(range=[0, max(75.0, max([r["op_margin_pct"] or 0 for r in ann] + [30]) * 1.2)], ticksuffix="%", automargin=True, gridcolor="rgba(0,0,0,0.03)", tickfont=dict(color="#1d8f34", size=11), row=1, col=1, secondary_y=True)
+    fig.update_yaxes(range=[y_min, y_max], tickprefix="$", side="right", automargin=True, gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=1, col=2)
+    x_span = max((sub.index[-1] - sub.index[0]).days, 10)
+    fig.update_xaxes(automargin=True, gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11))
+    fig.update_xaxes(range=[sub.index[0] - pd.Timedelta(days=5), sub.index[-1] + pd.Timedelta(days=max(7, int(x_span * 0.06)))], row=1, col=2)
 
     for ann_obj in fig.layout.annotations:
         if ann_obj.font is None or ann_obj.font.color is None:
             ann_obj.font = dict(color="#1d1d1f", size=13)
 
     fig.update_layout(
-        height=380,
-        margin=dict(l=12, r=18, t=58, b=20),
+        height=400,
+        margin=dict(l=46, r=66, t=66, b=30),
         paper_bgcolor="#faf9f6",
         plot_bgcolor="#f5f2ec",
         font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),

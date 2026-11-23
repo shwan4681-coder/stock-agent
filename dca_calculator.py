@@ -310,7 +310,8 @@ def build_dca_chart(plan: dict, currency: str) -> go.Figure:
     max_buy = float(df["buy_amount"].max()) if len(df) else 1.0
     fig.update_yaxes(
         title_text=f"회차 매수 금액 ({unit_label})",
-        range=[0, max_buy * 1.25],
+        range=[0, max_buy * 1.28],
+        automargin=True,
         gridcolor="rgba(0, 0, 0, 0.06)",
         tickfont=dict(color="#6e6e73", size=11),
         title_font=dict(color="#86868b", size=11),
@@ -322,6 +323,7 @@ def build_dca_chart(plan: dict, currency: str) -> go.Figure:
         title_text="지수 / 예상 평단가",
         range=[p_min, p_max],
         tickformat=",.0f",
+        automargin=True,
         gridcolor="rgba(0, 0, 0, 0.03)",
         tickfont=dict(color="#6e6e73", size=11),
         title_font=dict(color="#86868b", size=11),
@@ -329,14 +331,15 @@ def build_dca_chart(plan: dict, currency: str) -> go.Figure:
     )
     fig.update_xaxes(
         title_text="고점 대비 낙폭 구간",
+        automargin=True,
         tickfont=dict(color="#1d1d1f", size=12),
         title_font=dict(color="#86868b", size=11),
     )
 
     fig.update_layout(
         title=dict(text="구간별 분할 매수 금액 & 누적 평단가", font=dict(size=14, color="#1d1d1f")),
-        height=410,
-        margin=dict(l=12, r=18, t=64, b=32),
+        height=430,
+        margin=dict(l=52, r=64, t=70, b=40),
         paper_bgcolor="#faf9f6",
         plot_bgcolor="#f5f2ec",
         font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),
