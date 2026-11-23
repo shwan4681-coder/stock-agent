@@ -518,10 +518,10 @@ def render_market_buy_index_card(buy_idx: dict) -> str:
     chips = []
     for it in buy_idx["items"]:
         if it["met"]:
-            st_html = '<span style="color:#15803d; font-weight:700;">✅ 충족</span>'
+            st_html = '<span style="color:#15803d; font-weight:700;">✅ 25/25점</span>'
             bd = "rgba(21, 128, 61, 0.28)"
         else:
-            st_html = f'<span style="color:#78716c; font-weight:600;">{it["pts"]:.0f}/25점</span>'
+            st_html = f'<span style="color:#78716c; font-weight:600;">{int(it["pts"])}/25점</span>'
             bd = "rgba(28, 25, 23, 0.07)"
         chips.append(
             f'<div style="background:#f2efe9; border:1px solid {bd}; border-radius:14px; padding:11px 13px;">'

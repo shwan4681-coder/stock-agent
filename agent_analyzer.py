@@ -191,14 +191,14 @@ def generate_agent_briefing(data: dict) -> dict:
     }
 
 
-def _lerp_score(val: float, best_val: float, worst_val: float, max_pts: float = 25.0) -> float:
-    """Linearly interpolate points when lower value is better (e.g. F&G, RSI, MFI, Drawdown)."""
+def _lerp_score(val: float, best_val: float, worst_val: float, max_pts: int = 25) -> int:
+    """Return integer score (0~max_pts). Full max_pts is ONLY awarded when val <= best_val."""
     if val <= best_val:
         return max_pts
     if val >= worst_val:
-        return 0.0
+        return 0
     ratio = (worst_val - val) / (worst_val - best_val)
-    return max(0.0, min(max_pts, ratio * max_pts))
+    return max(0, min(max_pts - 1, int(ratio * max_pts)))
 
 
 def compute_market_buy_index(data: dict) -> dict:
@@ -216,23 +216,22 @@ def compute_market_buy_index(data: dict) -> dict:
     dd_val = float(nq["dd_ath_pct"])
 
     # 1) Fear & Greed <= 10 -> 25 pts, >= 80 -> 0 pts
-    fg_pts = round(_lerp_score(fg_val, best_val=10.0, worst_val=80.0, max_pts=25.0), 1)
+    fg_pts = _lerp_score(fg_val, best_val=10.0, worst_val=80.0, max_pts=25)
     fg_met = fg_val <= 10.0
 
     # 2) NASDAQ RSI <= 30 -> 25 pts, >= 72 -> 0 pts
-    rsi_pts = round(_lerp_score(float(rsi_val), best_val=30.0, worst_val=72.0, max_pts=25.0), 1) if rsi_val is not None else 12.5
+    rsi_pts = _lerp_score(float(rsi_val), best_val=30.0, worst_val=72.0, max_pts=25) if rsi_val is not None else 12
     rsi_met = rsi_val is not None and rsi_val <= 30.0
 
     # 3) NASDAQ MFI <= 20 -> 25 pts, >= 80 -> 0 pts
-    mfi_pts = round(_lerp_score(float(mfi_val), best_val=20.0, worst_val=80.0, max_pts=25.0), 1) if mfi_val is not None else 12.5
+    mfi_pts = _lerp_score(float(mfi_val), best_val=20.0, worst_val=80.0, max_pts=25) if mfi_val is not None else 12
     mfi_met = mfi_val is not None and mfi_val <= 20.0
 
     # 4) NASDAQ Drawdown <= -20% -> 25 pts, >= -1% -> 0 pts
-    dd_pts = round(_lerp_score(dd_val, best_val=-20.0, worst_val=-1.0, max_pts=25.0), 1)
+    dd_pts = _lerp_score(dd_val, best_val=-20.0, worst_val=-1.0, max_pts=25)
     dd_met = dd_val <= -20.0
 
-    total = int(round(fg_pts + rsi_pts + mfi_pts + dd_pts))
-    total = max(0, min(100, total))
+    total = max(0, min(100, fg_pts + rsi_pts + mfi_pts + dd_pts))
 
     if total >= 85:
         grade = "🟢 강력 매수"
