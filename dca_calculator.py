@@ -168,78 +168,75 @@ def format_money_short(amount: float, currency: str) -> str:
 
 
 def render_dca_summary_cards(plan: dict, currency: str, asset_label: str) -> str:
-    """Render 4 sleek KPI summary cards for the split-buy plan."""
+    """Render 4 minimalist Apple-style KPI summary cards for the split-buy plan."""
     reached_avg_str = (
         f"도달 구간 평단 {plan['reached_avg_price']:,.2f}"
         if plan["reached_avg_price"] is not None
-        else "아직 -5% 구간 미도달 (전액 현금 대기)"
+        else "아직 -5% 구간 미도달 · 전액 현금 대기"
     )
 
     return _compact_html(f"""
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin:12px 0 18px 0;">
-      <div class="glass-card" style="padding:16px 18px;">
+      <div class="glass-card" style="padding:18px 20px;">
         <div class="card-kicker"><span>기준 지수 현재 낙폭</span><span class="ticker-badge">{asset_label}</span></div>
-        <div style="font-family:'JetBrains Mono', monospace; font-size:1.75rem; font-weight:800; color:#f59e0b; margin:8px 0 4px 0;">{plan['current_dd_pct']:.2f}%</div>
-        <div style="font-size:0.78rem; color:#94a3b8;">현재 {plan['current_price']:,.2f} / 고점 {plan['ath_price']:,.2f}</div>
+        <div style="font-size:1.8rem; font-weight:700; color:#c96a00; margin:8px 0 4px 0; letter-spacing:-0.03em; font-variant-numeric:tabular-nums;">{plan['current_dd_pct']:.2f}%</div>
+        <div style="font-size:0.78rem; color:#6e6e73; font-variant-numeric:tabular-nums;">현재 {plan['current_price']:,.2f} · 고점 {plan['ath_price']:,.2f}</div>
       </div>
-      <div class="glass-card" style="padding:16px 18px;">
+      <div class="glass-card" style="padding:18px 20px;">
         <div class="card-kicker"><span>현재 시점 누적 투입액</span><span class="ticker-badge">{plan['reached_ratio_pct']:.0f}% 투입</span></div>
-        <div style="font-family:'JetBrains Mono', monospace; font-size:1.55rem; font-weight:800; color:#38bdf8; margin:8px 0 4px 0;">{format_money_short(plan['reached_invested'], currency)}</div>
-        <div style="font-size:0.78rem; color:#94a3b8;">잔여 현금: <b style="color:#e2e8f0;">{format_money_short(plan['remaining_cash'], currency)}</b></div>
+        <div style="font-size:1.6rem; font-weight:700; color:#0071e3; margin:8px 0 4px 0; letter-spacing:-0.03em; font-variant-numeric:tabular-nums;">{format_money_short(plan['reached_invested'], currency)}</div>
+        <div style="font-size:0.78rem; color:#6e6e73; font-variant-numeric:tabular-nums;">잔여 현금 <b style="color:#1d1d1f;">{format_money_short(plan['remaining_cash'], currency)}</b></div>
       </div>
-      <div class="glass-card" style="padding:16px 18px;">
+      <div class="glass-card" style="padding:18px 20px;">
         <div class="card-kicker"><span>전액 체결 시 최종 평단가</span><span class="ticker-badge">고점 대비 {plan['final_avg_dd_pct']:.1f}%</span></div>
-        <div style="font-family:'JetBrains Mono', monospace; font-size:1.75rem; font-weight:800; color:#c084fc; margin:8px 0 4px 0;">{plan['final_avg_price']:,.2f}</div>
-        <div style="font-size:0.78rem; color:#94a3b8;">{reached_avg_str}</div>
+        <div style="font-size:1.8rem; font-weight:700; color:#1d1d1f; margin:8px 0 4px 0; letter-spacing:-0.03em; font-variant-numeric:tabular-nums;">{plan['final_avg_price']:,.2f}</div>
+        <div style="font-size:0.78rem; color:#6e6e73;">{reached_avg_str}</div>
       </div>
-      <div class="glass-card" style="padding:16px 18px;">
-        <div class="card-kicker"><span>전고점 회복 시 예상 수익</span><span class="ticker-badge" style="color:#34d399;">+{plan['final_recovery_roi_pct']:.1f}%</span></div>
-        <div style="font-family:'JetBrains Mono', monospace; font-size:1.55rem; font-weight:800; color:#10b981; margin:8px 0 4px 0;">+{format_money_short(plan['final_recovery_profit'], currency)}</div>
-        <div style="font-size:0.78rem; color:#94a3b8;">총 시드 {format_money_short(plan['seed_amount'], currency)} 전액 체결 가정</div>
+      <div class="glass-card" style="padding:18px 20px;">
+        <div class="card-kicker"><span>전고점 회복 시 예상 수익</span><span class="ticker-badge" style="color:#1d8f34; background:rgba(29,143,52,0.1);">+{plan['final_recovery_roi_pct']:.1f}%</span></div>
+        <div style="font-size:1.6rem; font-weight:700; color:#1d8f34; margin:8px 0 4px 0; letter-spacing:-0.03em; font-variant-numeric:tabular-nums;">+{format_money_short(plan['final_recovery_profit'], currency)}</div>
+        <div style="font-size:0.78rem; color:#6e6e73; font-variant-numeric:tabular-nums;">총 시드 {format_money_short(plan['seed_amount'], currency)} 기준</div>
       </div>
     </div>
     """)
 
 
 def render_dca_table_html(plan: dict, currency: str) -> str:
-    """Render sleek dark HTML split-buy schedule table."""
+    """Render minimalist Apple-style split-buy schedule table."""
     row_htmls = []
     for r in plan["rows"]:
         if r["status"] == "reached":
-            badge_bg, badge_fg, badge_bd = "rgba(16,185,129,0.18)", "#34d399", "rgba(16,185,129,0.5)"
-            row_bg = "rgba(16, 185, 129, 0.06)"
-            icon = "✅ "
+            badge_bg, badge_fg = "rgba(29, 143, 52, 0.10)", "#1d8f34"
+            row_bg = "rgba(52, 199, 89, 0.04)"
         elif r["status"] == "next":
-            badge_bg, badge_fg, badge_bd = "rgba(56,189,248,0.22)", "#7dd3fc", "rgba(56,189,248,0.65)"
-            row_bg = "rgba(56, 189, 248, 0.09)"
-            icon = "🎯 "
+            badge_bg, badge_fg = "rgba(0, 113, 227, 0.11)", "#0071e3"
+            row_bg = "rgba(0, 113, 227, 0.04)"
         else:
-            badge_bg, badge_fg, badge_bd = "rgba(148,163,184,0.14)", "#94a3b8", "rgba(148,163,184,0.3)"
+            badge_bg, badge_fg = "#f5f5f7", "#6e6e73"
             row_bg = "transparent"
-            icon = "⏳ "
 
         row_htmls.append(
-            f'<tr style="background:{row_bg}; border-bottom:1px solid rgba(148,163,184,0.1);">'
-            f'<td style="padding:13px 12px; font-family:\'JetBrains Mono\',monospace; font-weight:800; color:#f8fafc;">고점 대비 {r["level_label"]}</td>'
-            f'<td style="padding:13px 12px; font-family:\'JetBrains Mono\',monospace; color:#e2e8f0; text-align:right;">{r["target_price"]:,.2f}</td>'
-            f'<td style="padding:13px 12px; text-align:center;"><span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.75rem; font-weight:700; background:{badge_bg}; color:{badge_fg}; border:1px solid {badge_bd};">{icon}{r["status_label"]}</span></td>'
-            f'<td style="padding:13px 12px; font-family:\'JetBrains Mono\',monospace; color:#cbd5e1; text-align:right;">{r["weight_pct"]:.1f}%</td>'
-            f'<td style="padding:13px 12px; font-family:\'JetBrains Mono\',monospace; font-weight:800; font-size:0.98rem; color:#38bdf8; text-align:right;">{format_money(r["buy_amount"], currency)}</td>'
-            f'<td style="padding:13px 12px; font-family:\'JetBrains Mono\',monospace; color:#cbd5e1; text-align:right;">{format_money_short(r["cum_invested"], currency)}</td>'
-            f'<td style="padding:13px 12px; font-family:\'JetBrains Mono\',monospace; color:#c084fc; text-align:right;">{r["cum_avg_price"]:,.2f} <span style="font-size:0.75rem; color:#94a3b8;">({r["cum_avg_dd_pct"]:.1f}%)</span></td>'
-            f'<td style="padding:13px 12px; font-family:\'JetBrains Mono\',monospace; font-weight:700; color:#10b981; text-align:right;">+{r["recovery_roi_pct"]:.1f}%</td>'
+            f'<tr style="background:{row_bg}; border-bottom:1px solid rgba(0,0,0,0.06);">'
+            f'<td style="padding:13px 12px; font-weight:700; color:#1d1d1f; font-variant-numeric:tabular-nums;">고점 대비 {r["level_label"]}</td>'
+            f'<td style="padding:13px 12px; color:#1d1d1f; text-align:right; font-variant-numeric:tabular-nums;">{r["target_price"]:,.2f}</td>'
+            f'<td style="padding:13px 12px; text-align:center;"><span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.74rem; font-weight:600; background:{badge_bg}; color:{badge_fg};">{r["status_label"]}</span></td>'
+            f'<td style="padding:13px 12px; color:#6e6e73; text-align:right; font-variant-numeric:tabular-nums;">{r["weight_pct"]:.1f}%</td>'
+            f'<td style="padding:13px 12px; font-weight:700; font-size:0.95rem; color:#0071e3; text-align:right; font-variant-numeric:tabular-nums;">{format_money(r["buy_amount"], currency)}</td>'
+            f'<td style="padding:13px 12px; color:#6e6e73; text-align:right; font-variant-numeric:tabular-nums;">{format_money_short(r["cum_invested"], currency)}</td>'
+            f'<td style="padding:13px 12px; color:#1d1d1f; text-align:right; font-variant-numeric:tabular-nums;">{r["cum_avg_price"]:,.2f} <span style="font-size:0.75rem; color:#86868b;">({r["cum_avg_dd_pct"]:.1f}%)</span></td>'
+            f'<td style="padding:13px 12px; font-weight:600; color:#1d8f34; text-align:right; font-variant-numeric:tabular-nums;">+{r["recovery_roi_pct"]:.1f}%</td>'
             f'</tr>'
         )
 
     return _compact_html(f"""
-    <div class="glass-card" style="padding:18px 20px; overflow-x:auto;">
+    <div class="glass-card" style="padding:20px 22px; overflow-x:auto;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-        <span style="font-weight:700; font-size:1rem; color:#f8fafc;">구간별 분할 매수 실행표</span>
-        <span style="font-size:0.78rem; color:#94a3b8;">✅ 도달 완료 구간 · 🎯 다음 매수 대기 구간 · ⏳ 추가 하락 대비 현금</span>
+        <span style="font-weight:700; font-size:0.98rem; color:#1d1d1f;">구간별 분할 매수 실행표</span>
+        <span style="font-size:0.76rem; color:#86868b;">초록 도달 완료 · 파랑 다음 목표 · 회색 현금 대기</span>
       </div>
       <table style="width:100%; border-collapse:collapse; font-size:0.86rem;">
         <thead>
-          <tr style="border-bottom:1px solid rgba(148,163,184,0.22); color:#94a3b8; font-size:0.76rem; text-transform:uppercase; letter-spacing:0.04em;">
+          <tr style="border-bottom:1px solid rgba(0,0,0,0.10); color:#86868b; font-size:0.75rem; font-weight:600;">
             <th style="padding:10px 12px; text-align:left;">낙폭 구간</th>
             <th style="padding:10px 12px; text-align:right;">목표 지수</th>
             <th style="padding:10px 12px; text-align:center;">현재 상태</th>
@@ -259,10 +256,10 @@ def render_dca_table_html(plan: dict, currency: str) -> str:
 
 
 def build_dca_chart(plan: dict, currency: str) -> go.Figure:
-    """Build high-contrast dual-axis chart: Buy amount bars per drawdown level + Avg cost curve."""
+    """Build Apple Studio Light dual-axis chart: Buy amount bars + Avg cost curve."""
     df = plan["df"]
     bar_colors = [
-        "#10b981" if s == "reached" else "#38bdf8" if s == "next" else "#475569"
+        "#34c759" if s == "reached" else "#0071e3" if s == "next" else "#d2d2d7"
         for s in df["status"]
     ]
     unit_label = "원" if currency == "KRW" else "USD"
@@ -274,10 +271,10 @@ def build_dca_chart(plan: dict, currency: str) -> go.Figure:
             x=df["level_label"],
             y=df["buy_amount"],
             name=f"구간 매수 금액 ({unit_label})",
-            marker=dict(color=bar_colors, line=dict(color="rgba(248,250,252,0.25)", width=1)),
+            marker=dict(color=bar_colors),
             text=text_labels,
             textposition="outside",
-            textfont=dict(color="#f8fafc", size=11),
+            textfont=dict(color="#1d1d1f", size=11),
             hovertemplate="구간 %{x}<br>매수액: %{text}<extra></extra>",
         ),
         secondary_y=False,
@@ -288,8 +285,8 @@ def build_dca_chart(plan: dict, currency: str) -> go.Figure:
             y=df["cum_avg_price"],
             name="예상 누적 평단가",
             mode="lines+markers",
-            line=dict(color="#e879f9", width=2.8),
-            marker=dict(size=8, color="#e879f9", line=dict(color="#0f172a", width=2)),
+            line=dict(color="#1d1d1f", width=2.4),
+            marker=dict(size=7, color="#1d1d1f"),
             hovertemplate="누적 평단가: %{y:,.2f}<extra></extra>",
         ),
         secondary_y=True,
@@ -300,8 +297,8 @@ def build_dca_chart(plan: dict, currency: str) -> go.Figure:
             y=df["target_price"],
             name="구간 목표 지수",
             mode="lines+markers",
-            line=dict(color="#fbbf24", width=1.8, dash="dot"),
-            marker=dict(size=6, color="#fbbf24"),
+            line=dict(color="#86868b", width=1.6, dash="dot"),
+            marker=dict(size=5, color="#86868b"),
             hovertemplate="목표 지수: %{y:,.2f}<extra></extra>",
         ),
         secondary_y=True,
@@ -311,9 +308,9 @@ def build_dca_chart(plan: dict, currency: str) -> go.Figure:
     fig.update_yaxes(
         title_text=f"회차 매수 금액 ({unit_label})",
         range=[0, max_buy * 1.25],
-        gridcolor="rgba(148, 163, 184, 0.16)",
-        tickfont=dict(color="#e2e8f0", size=11),
-        title_font=dict(color="#94a3b8", size=12),
+        gridcolor="rgba(0, 0, 0, 0.06)",
+        tickfont=dict(color="#6e6e73", size=11),
+        title_font=dict(color="#86868b", size=11),
         secondary_y=False,
     )
     p_min = float(df["target_price"].min()) * 0.96
@@ -322,36 +319,26 @@ def build_dca_chart(plan: dict, currency: str) -> go.Figure:
         title_text="지수 / 예상 평단가",
         range=[p_min, p_max],
         tickformat=",.0f",
-        gridcolor="rgba(148, 163, 184, 0.08)",
-        tickfont=dict(color="#e2e8f0", size=11),
-        title_font=dict(color="#94a3b8", size=12),
+        gridcolor="rgba(0, 0, 0, 0.03)",
+        tickfont=dict(color="#6e6e73", size=11),
+        title_font=dict(color="#86868b", size=11),
         secondary_y=True,
     )
     fig.update_xaxes(
-        title_text="고점 대비 낙폭 구간 (초록=도달 · 하늘=다음목표 · 회색=대기)",
-        tickfont=dict(color="#f8fafc", size=12),
-        title_font=dict(color="#94a3b8", size=12),
+        title_text="고점 대비 낙폭 구간",
+        tickfont=dict(color="#1d1d1f", size=12),
+        title_font=dict(color="#86868b", size=11),
     )
 
     fig.update_layout(
-        title=dict(text="구간별 분할 매수 금액 & 누적 평단가 하락 효과", font=dict(size=14, color="#f8fafc")),
-        height=430,
-        margin=dict(l=16, r=20, t=72, b=36),
-        paper_bgcolor="#0b1220",
-        plot_bgcolor="#111b2e",
-        font=dict(color="#f1f5f9", family="Inter, sans-serif", size=12),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="left",
-            x=0.0,
-            bgcolor="rgba(15, 23, 42, 0.85)",
-            bordercolor="rgba(148, 163, 184, 0.25)",
-            borderwidth=1,
-            font=dict(color="#f1f5f9", size=12),
-        ),
+        title=dict(text="구간별 분할 매수 금액 & 누적 평단가", font=dict(size=14, color="#1d1d1f")),
+        height=410,
+        margin=dict(l=12, r=18, t=64, b=32),
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0, bgcolor="rgba(255,255,255,0)", font=dict(color="#6e6e73", size=12)),
         hovermode="x unified",
-        hoverlabel=dict(bgcolor="#0f172a", bordercolor="#38bdf8", font=dict(color="#f8fafc", size=12)),
+        hoverlabel=dict(bgcolor="#ffffff", bordercolor="#d2d2d7", font=dict(color="#1d1d1f", size=12)),
     )
     return fig

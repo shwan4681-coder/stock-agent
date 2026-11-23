@@ -514,6 +514,15 @@ def analyze_custom_ticker_cached(symbol: str, share_pct: int, mgmt_score: int) -
     return analyze_single_stock(symbol, custom_share_pct=share_pct, custom_mgmt_score=mgmt_score)
 
 
+def _apple_signal_color(hex_c: str) -> str:
+    return {
+        "#10b981": "#1d8f34",
+        "#38bdf8": "#0071e3",
+        "#eab308": "#9a6700",
+        "#94a3b8": "#6e6e73",
+    }.get(hex_c.lower(), hex_c)
+
+
 def render_monopoly_summary_cards(stocks: list[dict]) -> str:
     total = len(stocks)
     buy_cnt = sum(1 for s in stocks if s["signal_code"] in ("strong_buy", "accumulate"))
@@ -522,25 +531,25 @@ def render_monopoly_summary_cards(stocks: list[dict]) -> str:
     avg_dd = np.mean([s["dd_pct"] for s in stocks]) if stocks else 0.0
     return _compact_html(f"""
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; margin:10px 0 18px 0;">
-      <div class="glass-card" style="padding:16px 18px;">
+      <div class="glass-card" style="padding:18px 20px;">
         <div class="card-kicker"><span>스캔 독점 후보</span><span class="ticker-badge">LIVE</span></div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:1.85rem; font-weight:800; color:#f8fafc; margin:6px 0 2px 0;">{total}종목</div>
-        <div style="font-size:0.78rem; color:#94a3b8;">글로벌 과독점·경제적 해자 선도주</div>
+        <div style="font-size:1.85rem; font-weight:700; color:#1d1d1f; margin:6px 0 2px 0; letter-spacing:-0.03em; font-variant-numeric:tabular-nums;">{total}종목</div>
+        <div style="font-size:0.78rem; color:#6e6e73;">글로벌 과독점 · 경제적 해자 선도주</div>
       </div>
-      <div class="glass-card" style="padding:16px 18px;">
-        <div class="card-kicker"><span>매수·분할매수 신호</span><span class="ticker-badge" style="color:#34d399;">강력 {strong_cnt}개</span></div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:1.85rem; font-weight:800; color:#10b981; margin:6px 0 2px 0;">{buy_cnt}종목</div>
-        <div style="font-size:0.78rem; color:#94a3b8;">해자 72점↑ + 조정/과매도/저PEG</div>
+      <div class="glass-card" style="padding:18px 20px;">
+        <div class="card-kicker"><span>매수 · 분할매수 신호</span><span class="ticker-badge" style="color:#1d8f34; background:rgba(29,143,52,0.1);">강력 {strong_cnt}개</span></div>
+        <div style="font-size:1.85rem; font-weight:700; color:#1d8f34; margin:6px 0 2px 0; letter-spacing:-0.03em; font-variant-numeric:tabular-nums;">{buy_cnt}종목</div>
+        <div style="font-size:0.78rem; color:#6e6e73;">해자 72점↑ · 조정/과매도/저PEG</div>
       </div>
-      <div class="glass-card" style="padding:16px 18px;">
-        <div class="card-kicker"><span>후보군 평균 영업이익률</span><span class="ticker-badge">5Y AVG</span></div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:1.85rem; font-weight:800; color:#38bdf8; margin:6px 0 2px 0;">{avg_op:.1f}%</div>
-        <div style="font-size:0.78rem; color:#94a3b8;">기준: 5년 연속 20% 이상</div>
+      <div class="glass-card" style="padding:18px 20px;">
+        <div class="card-kicker"><span>후보군 평균 영업이익률</span><span class="ticker-badge">AVG</span></div>
+        <div style="font-size:1.85rem; font-weight:700; color:#0071e3; margin:6px 0 2px 0; letter-spacing:-0.03em; font-variant-numeric:tabular-nums;">{avg_op:.1f}%</div>
+        <div style="font-size:0.78rem; color:#6e6e73;">기준: 다개년 연속 20% 이상</div>
       </div>
-      <div class="glass-card" style="padding:16px 18px;">
+      <div class="glass-card" style="padding:18px 20px;">
         <div class="card-kicker"><span>후보군 평균 고점 낙폭</span><span class="ticker-badge">2Y HIGH</span></div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:1.85rem; font-weight:800; color:#f59e0b; margin:6px 0 2px 0;">{avg_dd:.1f}%</div>
-        <div style="font-size:0.78rem; color:#94a3b8;">우량주 할인 폭 실시간 추적</div>
+        <div style="font-size:1.85rem; font-weight:700; color:#c96a00; margin:6px 0 2px 0; letter-spacing:-0.03em; font-variant-numeric:tabular-nums;">{avg_dd:.1f}%</div>
+        <div style="font-size:0.78rem; color:#6e6e73;">우량 독점주 할인 폭 실시간 추적</div>
       </div>
     </div>
     """)
@@ -552,41 +561,41 @@ def render_monopoly_table_html(stocks: list[dict]) -> str:
 
     rows = []
     for s in stocks:
-        sc = s["signal_color"]
+        sc = _apple_signal_color(s["signal_color"])
         rev_str = f"{s['rev_cagr_pct']:+.1f}%" if s["rev_cagr_pct"] is not None else "-"
-        rev_col = "#34d399" if (s["rev_cagr_pct"] is not None and s["rev_cagr_pct"] >= 20.0) else "#cbd5e1"
+        rev_col = "#1d8f34" if (s["rev_cagr_pct"] is not None and s["rev_cagr_pct"] >= 20.0) else "#1d1d1f"
         op_str = f"{s['avg_op_margin']:.1f}% ({s['op_years_pass']}/{s['op_years_total']}년)" if s["avg_op_margin"] is not None else "-"
-        op_col = "#34d399" if (s["op_years_total"] >= 3 and s["op_years_pass"] == s["op_years_total"]) else "#fbbf24"
+        op_col = "#1d8f34" if (s["op_years_total"] >= 3 and s["op_years_pass"] == s["op_years_total"]) else "#c96a00"
         roe_str = f"{s['roe_pct']:.0f}%" if s["roe_pct"] is not None else "-"
         gm_str = f"{s['gross_margin_pct']:.0f}%" if s["gross_margin_pct"] is not None else "-"
         fcf_str = f"{s['fcf_margin_pct']:.0f}%" if s["fcf_margin_pct"] is not None else "-"
         rsi_str = f"{s['rsi']:.1f}" if s["rsi"] is not None else "-"
-        rsi_col = "#10b981" if (s["rsi"] is not None and s["rsi"] <= 35) else "#ef4444" if (s["rsi"] is not None and s["rsi"] >= 70) else "#e2e8f0"
-        dd_col = "#10b981" if s["dd_pct"] <= -15 else "#38bdf8" if s["dd_pct"] <= -8 else "#94a3b8"
+        rsi_col = "#1d8f34" if (s["rsi"] is not None and s["rsi"] <= 35) else "#d70015" if (s["rsi"] is not None and s["rsi"] >= 70) else "#1d1d1f"
+        dd_col = "#1d8f34" if s["dd_pct"] <= -15 else "#0071e3" if s["dd_pct"] <= -8 else "#6e6e73"
         pe_str = f"{s['forward_pe']:.1f}x" if s["forward_pe"] is not None else "-"
 
         rows.append(
-            f'<tr style="border-bottom:1px solid rgba(148,163,184,0.1);">'
-            f'<td style="padding:12px 10px;"><b style="color:#f8fafc; font-size:0.93rem;">{s["name_kr"]}</b> <span class="ticker-badge">{s["symbol"]}</span><div style="font-size:0.73rem; color:#94a3b8; margin-top:2px;">{s["moat_type"]} (점유율 ~{s["market_share_pct"]}%)</div></td>'
-            f'<td style="padding:12px 8px; text-align:right; font-family:\'JetBrains Mono\',monospace; color:{rev_col}; font-weight:700;">{rev_str}</td>'
-            f'<td style="padding:12px 8px; text-align:right; font-family:\'JetBrains Mono\',monospace; color:{op_col}; font-weight:700;">{op_str}</td>'
-            f'<td style="padding:12px 8px; text-align:center; font-family:\'JetBrains Mono\',monospace; font-size:0.78rem; color:#cbd5e1;">ROE {roe_str}<br/>GM {gm_str} · FCF {fcf_str}</td>'
-            f'<td style="padding:12px 8px; text-align:right; font-family:\'JetBrains Mono\',monospace; color:#f8fafc;">${s["price"]:,.2f}<div style="font-size:0.74rem; color:{dd_col};">고점 {s["dd_pct"]:.1f}%</div></td>'
-            f'<td style="padding:12px 8px; text-align:center; font-family:\'JetBrains Mono\',monospace;"><span style="color:{rsi_col}; font-weight:700;">{rsi_str}</span><div style="font-size:0.72rem; color:#94a3b8;">Fwd {pe_str}</div></td>'
-            f'<td style="padding:12px 8px; text-align:center; font-family:\'JetBrains Mono\',monospace; font-weight:800; color:#c084fc;">{s["moat_score"]}점</td>'
-            f'<td style="padding:12px 10px; text-align:center;"><span style="display:inline-block; padding:4px 10px; border-radius:999px; font-size:0.75rem; font-weight:700; background:{sc}22; color:{sc}; border:1px solid {sc}66;">{s["signal"]}</span><div style="font-size:0.71rem; color:#94a3b8; margin-top:3px;">{s["buy_reasons"][0]}</div></td>'
+            f'<tr style="border-bottom:1px solid rgba(0,0,0,0.06);">'
+            f'<td style="padding:13px 10px;"><b style="color:#1d1d1f; font-size:0.92rem;">{s["name_kr"]}</b> <span class="ticker-badge">{s["symbol"]}</span><div style="font-size:0.74rem; color:#6e6e73; margin-top:2px;">{s["moat_type"]} · 점유율 약 {s["market_share_pct"]}%</div></td>'
+            f'<td style="padding:13px 8px; text-align:right; color:{rev_col}; font-weight:600; font-variant-numeric:tabular-nums;">{rev_str}</td>'
+            f'<td style="padding:13px 8px; text-align:right; color:{op_col}; font-weight:600; font-variant-numeric:tabular-nums;">{op_str}</td>'
+            f'<td style="padding:13px 8px; text-align:center; font-size:0.78rem; color:#6e6e73; font-variant-numeric:tabular-nums;">ROE {roe_str}<br/>GM {gm_str} · FCF {fcf_str}</td>'
+            f'<td style="padding:13px 8px; text-align:right; color:#1d1d1f; font-weight:600; font-variant-numeric:tabular-nums;">${s["price"]:,.2f}<div style="font-size:0.74rem; color:{dd_col};">고점 {s["dd_pct"]:.1f}%</div></td>'
+            f'<td style="padding:13px 8px; text-align:center; font-variant-numeric:tabular-nums;"><span style="color:{rsi_col}; font-weight:600;">{rsi_str}</span><div style="font-size:0.72rem; color:#86868b;">Fwd {pe_str}</div></td>'
+            f'<td style="padding:13px 8px; text-align:center; font-weight:700; color:#1d1d1f; font-variant-numeric:tabular-nums;">{s["moat_score"]}점</td>'
+            f'<td style="padding:13px 10px; text-align:center;"><span style="display:inline-block; padding:4px 10px; border-radius:999px; font-size:0.74rem; font-weight:600; background:{sc}16; color:{sc};">{s["signal"]}</span><div style="font-size:0.72rem; color:#86868b; margin-top:3px;">{s["buy_reasons"][0]}</div></td>'
             f'</tr>'
         )
 
     return _compact_html(f"""
-    <div class="glass-card" style="padding:18px 18px; overflow-x:auto;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-        <span style="font-weight:700; font-size:1rem; color:#f8fafc;">👑 글로벌 독점·과독점 우량주 스크리너 &amp; 실시간 매수 신호</span>
-        <span style="font-size:0.76rem; color:#94a3b8;">정렬: 매수 신호 우선 → 해자·버핏 종합점수 순</span>
+    <div class="glass-card" style="padding:20px 20px; overflow-x:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <span style="font-weight:700; font-size:0.98rem; color:#1d1d1f;">글로벌 독점 · 과독점 스크리너</span>
+        <span style="font-size:0.76rem; color:#86868b;">매수 신호 우선 → 해자 · 버핏 점수 순</span>
       </div>
       <table style="width:100%; border-collapse:collapse; font-size:0.84rem;">
         <thead>
-          <tr style="border-bottom:1px solid rgba(148,163,184,0.22); color:#94a3b8; font-size:0.74rem;">
+          <tr style="border-bottom:1px solid rgba(0,0,0,0.10); color:#86868b; font-size:0.74rem; font-weight:600;">
             <th style="padding:9px 10px; text-align:left;">기업 · 독점 분야</th>
             <th style="padding:9px 8px; text-align:right;">매출 CAGR</th>
             <th style="padding:9px 8px; text-align:right;">영업이익률 (연속)</th>
@@ -594,7 +603,7 @@ def render_monopoly_table_html(stocks: list[dict]) -> str:
             <th style="padding:9px 8px; text-align:right;">현재가 / 낙폭</th>
             <th style="padding:9px 8px; text-align:center;">RSI / PER</th>
             <th style="padding:9px 8px; text-align:center;">해자점수</th>
-            <th style="padding:9px 10px; text-align:center;">실시간 매수 신호</th>
+            <th style="padding:9px 10px; text-align:center;">실시간 신호</th>
           </tr>
         </thead>
         <tbody>
@@ -606,46 +615,46 @@ def render_monopoly_table_html(stocks: list[dict]) -> str:
 
 
 def render_stock_deep_dive_html(s: dict) -> str:
-    """Render 8-criterion Monopoly & Warren Buffett scorecard for one selected stock."""
+    """Render minimalist Apple-style 8-criterion Monopoly & Warren Buffett scorecard."""
     items = []
     passed_cnt = sum(1 for c in s["checklist"] if c["passed"])
     for c in s["checklist"]:
         if c["passed"]:
-            badge = '<span style="color:#34d399; font-weight:700;">✅ 충족</span>'
-            bd = "rgba(16,185,129,0.32)"
+            badge = '<span style="color:#1d8f34; font-weight:600;">충족</span>'
+            bg = "#f5f5f7"
         else:
-            badge = '<span style="color:#f59e0b; font-weight:700;">⚠️ 미달/점검</span>'
-            bd = "rgba(245,158,11,0.28)"
+            badge = '<span style="color:#c96a00; font-weight:600;">점검 필요</span>'
+            bg = "#fbfbfd"
         items.append(
-            f'<div style="background:rgba(2,6,23,0.55); border:1px solid {bd}; border-radius:12px; padding:12px 14px;">'
+            f'<div style="background:{bg}; border:1px solid rgba(0,0,0,0.06); border-radius:14px; padding:14px 16px;">'
             f'<div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">'
-            f'<span style="font-size:0.82rem; font-weight:700; color:#f1f5f9;">{c["title"]}</span>'
-            f'<span style="font-size:0.75rem;">{badge}</span>'
+            f'<span style="font-size:0.82rem; font-weight:600; color:#1d1d1f;">{c["title"]}</span>'
+            f'<span style="font-size:0.74rem;">{badge}</span>'
             f'</div>'
-            f'<div style="display:flex; justify-content:space-between; align-items:baseline; margin:6px 0 4px 0;">'
-            f'<span style="font-family:\'JetBrains Mono\',monospace; font-size:1.15rem; font-weight:800; color:#38bdf8;">{c["value"]}</span>'
-            f'<span style="font-size:0.72rem; color:#94a3b8;">기준: {c["rule"]}</span>'
+            f'<div style="display:flex; justify-content:space-between; align-items:baseline; margin:8px 0 4px 0;">'
+            f'<span style="font-size:1.18rem; font-weight:700; color:#1d1d1f; font-variant-numeric:tabular-nums;">{c["value"]}</span>'
+            f'<span style="font-size:0.72rem; color:#86868b;">기준 {c["rule"]}</span>'
             f'</div>'
-            f'<div style="font-size:0.75rem; color:#94a3b8; line-height:1.45;">{c["note"]}</div>'
+            f'<div style="font-size:0.76rem; color:#6e6e73; line-height:1.48;">{c["note"]}</div>'
             f'</div>'
         )
 
-    sc = s["signal_color"]
+    sc = _apple_signal_color(s["signal_color"])
     reasons_str = " · ".join(s["buy_reasons"])
     return _compact_html(f"""
     <div class="agent-panel" style="margin-top:12px;">
       <div class="agent-header">
         <div>
-          <div style="font-size:0.78rem; color:#38bdf8; font-weight:700; letter-spacing:0.06em;">WIDE-MOAT &amp; BUFFETT SCORECARD · {s['symbol']}</div>
-          <div style="font-size:1.25rem; font-weight:800; color:#f8fafc; margin-top:2px;">{s['name_kr']} ({s['symbol']}) — ${s['price']:,.2f} <span style="font-size:0.9rem; color:#f59e0b;">(고점 대비 {s['dd_pct']:.1f}%)</span></div>
-          <div style="font-size:0.84rem; color:#cbd5e1; margin-top:4px;">매수 신호 근거: {reasons_str}</div>
+          <div style="font-size:0.75rem; color:#6e6e73; font-weight:600; letter-spacing:0.02em; text-transform:uppercase;">Wide-Moat Scorecard · {s['symbol']}</div>
+          <div style="font-size:1.3rem; font-weight:700; color:#1d1d1f; margin-top:3px; letter-spacing:-0.025em;">{s['name_kr']} ({s['symbol']}) · ${s['price']:,.2f} <span style="font-size:0.9rem; color:#c96a00; font-weight:600;">고점 대비 {s['dd_pct']:.1f}%</span></div>
+          <div style="font-size:0.84rem; color:#6e6e73; margin-top:4px;">{reasons_str}</div>
         </div>
-        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <div class="agent-stance" style="background:rgba(192,132,252,0.16); color:#d8b4fe; border:1px solid rgba(192,132,252,0.5);">8대 기준 {passed_cnt}/8 충족 ({s['moat_score']}점)</div>
-          <div class="agent-stance" style="background:{sc}22; color:{sc}; border:1px solid {sc}66;">● {s['signal']}</div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <div class="agent-stance" style="background:#f5f5f7; color:#1d1d1f;">8대 기준 {passed_cnt}/8 충족 · {s['moat_score']}점</div>
+          <div class="agent-stance" style="background:{sc}16; color:{sc};">{s['signal']}</div>
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px; margin-top:12px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:12px; margin-top:12px;">
         {"".join(items)}
       </div>
     </div>
@@ -653,15 +662,15 @@ def render_stock_deep_dive_html(s: dict) -> str:
 
 
 def build_stock_financial_chart(s: dict) -> go.Figure:
-    """Build 2-panel chart: Left = Annual Revenue & Operating Margin (20% threshold), Right = 1Y Price + RSI."""
+    """Build Apple Studio Light 2-panel chart: Annual Revenue & Operating Margin + 1Y Price."""
     fig = make_subplots(
         rows=1,
         cols=2,
         specs=[[{"secondary_y": True}, {"secondary_y": False}]],
         horizontal_spacing=0.1,
         subplot_titles=(
-            f"{s['symbol']} 연간 매출($B) & 영업이익률(% · 20% 기준선)",
-            f"{s['symbol']} 최근 1년 주가 & 200일선 (고점 대비 {s['dd_pct']:.1f}%)",
+            f"{s['symbol']} 연간 매출 ($B) · 영업이익률 (%)",
+            f"{s['symbol']} 최근 1년 주가 · 200일선 (고점 대비 {s['dd_pct']:.1f}%)",
         ),
     )
 
@@ -675,10 +684,10 @@ def build_stock_financial_chart(s: dict) -> go.Figure:
                 x=years,
                 y=revs_b,
                 name="매출 ($B)",
-                marker_color="#38bdf8",
+                marker_color="#0071e3",
                 text=[f"${v:.1f}B" for v in revs_b],
                 textposition="outside",
-                textfont=dict(color="#f8fafc", size=11),
+                textfont=dict(color="#1d1d1f", size=11),
             ),
             row=1,
             col=1,
@@ -690,11 +699,11 @@ def build_stock_financial_chart(s: dict) -> go.Figure:
                 y=opms,
                 name="영업이익률 (%)",
                 mode="lines+markers+text",
-                line=dict(color="#34d399", width=2.8),
-                marker=dict(size=8, color="#34d399"),
+                line=dict(color="#1d8f34", width=2.4),
+                marker=dict(size=7, color="#1d8f34"),
                 text=[f"{v:.1f}%" if v is not None else "" for v in opms],
                 textposition="top center",
-                textfont=dict(color="#6ee7b7", size=11),
+                textfont=dict(color="#1d8f34", size=11),
             ),
             row=1,
             col=1,
@@ -702,10 +711,10 @@ def build_stock_financial_chart(s: dict) -> go.Figure:
         )
         fig.add_hline(
             y=20.0,
-            line_dash="dash",
-            line_color="#fbbf24",
+            line_dash="dot",
+            line_color="#c96a00",
             annotation_text=" 20% 기준",
-            annotation_font=dict(color="#fbbf24", size=11),
+            annotation_font=dict(color="#c96a00", size=11),
             row=1,
             col=1,
             secondary_y=True,
@@ -720,7 +729,7 @@ def build_stock_financial_chart(s: dict) -> go.Figure:
             x=sub.index,
             y=sub["Close"],
             name="주가 ($)",
-            line=dict(color="#e879f9", width=2.5),
+            line=dict(color="#1d1d1f", width=2.3),
             hovertemplate="$%{y:,.2f}<extra>종가</extra>",
         ),
         row=1,
@@ -731,7 +740,7 @@ def build_stock_financial_chart(s: dict) -> go.Figure:
             x=sub.index,
             y=sub["MA_200"],
             name="200일선",
-            line=dict(color="#fb7185", width=1.6, dash="dash"),
+            line=dict(color="#ff9500", width=1.5, dash="dash"),
             hovertemplate="$%{y:,.2f}<extra>MA200</extra>",
         ),
         row=1,
@@ -740,30 +749,31 @@ def build_stock_financial_chart(s: dict) -> go.Figure:
     fig.add_hline(
         y=s["high_2y"],
         line_dash="dash",
-        line_color="rgba(248,250,252,0.7)",
+        line_width=1.1,
+        line_color="rgba(29,29,31,0.35)",
         annotation_text=f" 고점 ${s['high_2y']:,.1f}",
-        annotation_font=dict(color="#f8fafc", size=11),
+        annotation_font=dict(color="#6e6e73", size=11),
         row=1,
         col=2,
     )
 
-    fig.update_yaxes(gridcolor="rgba(148,163,184,0.15)", tickfont=dict(color="#e2e8f0", size=11), row=1, col=1, secondary_y=False)
-    fig.update_yaxes(range=[0, max(75.0, max([r["op_margin_pct"] or 0 for r in ann] + [30]) * 1.2)], ticksuffix="%", gridcolor="rgba(148,163,184,0.08)", tickfont=dict(color="#6ee7b7", size=11), row=1, col=1, secondary_y=True)
-    fig.update_yaxes(range=[y_min, y_max], tickprefix="$", side="right", gridcolor="rgba(148,163,184,0.16)", tickfont=dict(color="#e2e8f0", size=11), row=1, col=2)
-    fig.update_xaxes(gridcolor="rgba(148,163,184,0.1)", tickfont=dict(color="#cbd5e1", size=11))
+    fig.update_yaxes(gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=1, col=1, secondary_y=False)
+    fig.update_yaxes(range=[0, max(75.0, max([r["op_margin_pct"] or 0 for r in ann] + [30]) * 1.2)], ticksuffix="%", gridcolor="rgba(0,0,0,0.03)", tickfont=dict(color="#1d8f34", size=11), row=1, col=1, secondary_y=True)
+    fig.update_yaxes(range=[y_min, y_max], tickprefix="$", side="right", gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=1, col=2)
+    fig.update_xaxes(gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11))
 
     for ann_obj in fig.layout.annotations:
         if ann_obj.font is None or ann_obj.font.color is None:
-            ann_obj.font = dict(color="#f8fafc", size=13)
+            ann_obj.font = dict(color="#1d1d1f", size=13)
 
     fig.update_layout(
-        height=390,
-        margin=dict(l=16, r=20, t=60, b=24),
-        paper_bgcolor="#0b1220",
-        plot_bgcolor="#111b2e",
-        font=dict(color="#f1f5f9", family="Inter, sans-serif", size=12),
-        legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="left", x=0.0, bgcolor="rgba(15,23,42,0.85)", font=dict(color="#f1f5f9", size=11)),
+        height=380,
+        margin=dict(l=12, r=18, t=58, b=20),
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),
+        legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="left", x=0.0, bgcolor="rgba(255,255,255,0)", font=dict(color="#6e6e73", size=11)),
         hovermode="x unified",
-        hoverlabel=dict(bgcolor="#0f172a", bordercolor="#38bdf8", font=dict(color="#f8fafc", size=12)),
+        hoverlabel=dict(bgcolor="#ffffff", bordercolor="#d2d2d7", font=dict(color="#1d1d1f", size=12)),
     )
     return fig
