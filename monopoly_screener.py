@@ -936,8 +936,8 @@ def build_stock_financial_chart(s: dict) -> go.Figure:
     fig.update_layout(
         height=380,
         margin=dict(l=12, r=18, t=58, b=20),
-        paper_bgcolor="#ffffff",
-        plot_bgcolor="#ffffff",
+        paper_bgcolor="#faf9f6",
+        plot_bgcolor="#f5f2ec",
         font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),
         legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="left", x=0.0, bgcolor="rgba(255,255,255,0)", font=dict(color="#6e6e73", size=11)),
         hovermode="x unified",

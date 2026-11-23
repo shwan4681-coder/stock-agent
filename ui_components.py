@@ -15,32 +15,35 @@ CUSTOM_CSS = """
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
 :root {
-  --apple-bg: #f5f5f7;
-  --apple-surface: #ffffff;
-  --apple-ink: #1d1d1f;
-  --apple-secondary: #6e6e73;
-  --apple-tertiary: #86868b;
-  --apple-border: rgba(0, 0, 0, 0.07);
-  --apple-blue: #0071e3;
-  --apple-green: #1d8f34;
-  --apple-red: #d70015;
-  --apple-orange: #c96a00;
-  --apple-shadow: 0 2px 14px rgba(0, 0, 0, 0.04);
+  --lux-bg: #edeae4;
+  --lux-card: #faf9f6;
+  --lux-sub: #f2efe9;
+  --lux-ink: #1c1917;
+  --lux-secondary: #57534e;
+  --lux-tertiary: #78716c;
+  --lux-border: rgba(28, 25, 23, 0.09);
+  --lux-titanium: #18181b;
+  --lux-gold: #b08338;
+  --lux-navy: #1e40af;
+  --lux-green: #15803d;
+  --lux-red: #b91c1c;
+  --lux-amber: #b45309;
+  --lux-shadow: 0 4px 20px rgba(28, 25, 23, 0.05);
 }
 
 html, body, [class*="css"] {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Apple SD Gothic Neo', 'Pretendard', sans-serif !important;
-  color: var(--apple-ink);
+  color: var(--lux-ink);
   -webkit-font-smoothing: antialiased;
 }
 
 .stApp {
-  background-color: var(--apple-bg) !important;
-  color: var(--apple-ink) !important;
+  background: linear-gradient(180deg, #eae6df 0%, #f1eee8 100%) !important;
+  color: var(--lux-ink) !important;
 }
 
 .block-container {
-  padding-top: 1.1rem !important;
+  padding-top: 1.05rem !important;
   padding-bottom: 3rem !important;
   max-width: 1220px !important;
 }
@@ -49,72 +52,91 @@ html, body, [class*="css"] {
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header[data-testid="stHeader"] {
-  background: rgba(245, 245, 247, 0.85) !important;
-  backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(234, 230, 223, 0.85) !important;
+  backdrop-filter: saturate(180%) blur(18px);
 }
 
-/* iOS / Apple.com Segmented Control Tab Bar */
+/* Smooth Organic Capsule Pill Navigation (ZERO boxy rectangles or focus outlines!) */
 .stTabs [data-baseweb="tab-list"] {
-  gap: 4px;
-  background: #e8e8ed;
-  border-radius: 12px;
-  padding: 4px;
+  gap: 6px;
+  background: rgba(28, 25, 23, 0.06);
+  border-radius: 999px;
+  padding: 5px;
   margin-bottom: 18px;
   display: flex;
   width: 100%;
-  border: none;
+  border: 1px solid rgba(28, 25, 23, 0.06);
 }
 .stTabs [data-baseweb="tab"] {
   flex: 1 1 0%;
   justify-content: center;
-  height: 38px;
-  border-radius: 9px;
-  padding: 0 12px !important;
-  color: #6e6e73 !important;
+  height: 40px;
+  border-radius: 999px !important;
+  padding: 0 14px !important;
+  color: #57534e !important;
   font-weight: 600 !important;
   font-size: 0.9rem !important;
   letter-spacing: -0.01em;
   white-space: nowrap;
-  background: transparent;
+  background: transparent !important;
   border: none !important;
-  transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  outline: none !important;
+  box-shadow: none !important;
+  transition: background-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
+}
+.stTabs [data-baseweb="tab"]:focus,
+.stTabs [data-baseweb="tab"]:focus-visible,
+.stTabs [data-baseweb="tab"]:active,
+.stTabs button[role="tab"]:focus,
+.stTabs button[role="tab"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 .stTabs [data-baseweb="tab"]:hover {
-  color: #1d1d1f !important;
+  color: #1c1917 !important;
+  background: rgba(255, 255, 255, 0.55) !important;
 }
-.stTabs [aria-selected="true"] {
-  background: #ffffff !important;
-  color: #1d1d1f !important;
-  font-weight: 700 !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10), 0 0.5px 1px rgba(0, 0, 0, 0.06) !important;
+.stTabs [aria-selected="true"],
+.stTabs [aria-selected="true"]:hover,
+.stTabs [aria-selected="true"]:focus {
+  background: #18181b !important;
+  color: #faf9f6 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(24, 24, 27, 0.22) !important;
+  outline: none !important;
+  border: none !important;
 }
 .stTabs [data-baseweb="tab-highlight"],
 .stTabs [data-baseweb="tab-border"] {
   display: none !important;
 }
 
-/* Clean Apple Hero Header */
+/* Luxury Space-Titanium Hero Header (Anchors the page with depth & richness) */
 .hero-wrap {
-  padding: 8px 2px 18px 2px;
-  margin-bottom: 12px;
+  background: linear-gradient(135deg, #18181b 0%, #27272a 60%, #1f242d 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  padding: 24px 28px;
+  margin-bottom: 18px;
+  box-shadow: 0 12px 32px rgba(24, 24, 27, 0.16);
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  gap: 14px;
 }
 .hero-title {
-  font-size: 1.95rem;
+  font-size: 1.78rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: #1d1d1f;
+  color: #faf9f6;
   margin: 0;
-  line-height: 1.15;
+  line-height: 1.18;
 }
 .hero-sub {
-  color: #6e6e73;
-  font-size: 0.92rem;
+  color: #a8a29e;
+  font-size: 0.89rem;
   font-weight: 400;
   margin-top: 5px;
   letter-spacing: -0.01em;
@@ -123,41 +145,40 @@ header[data-testid="stHeader"] {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  color: #1d1d1f;
-  padding: 6px 13px;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f5f5f4;
+  padding: 6px 14px;
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 .pulse-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #28cd41;
+  background: #34d399;
 }
 
-/* Apple Pure White Cards */
+/* Warm Ivory Luxury Cards */
 .glass-card {
-  background: var(--apple-surface);
-  border: 1px solid var(--apple-border);
-  border-radius: 20px;
+  background: var(--lux-card);
+  border: 1px solid var(--lux-border);
+  border-radius: 22px;
   padding: 22px 24px;
-  box-shadow: var(--apple-shadow);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: var(--lux-shadow);
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
   height: 100%;
 }
 .glass-card:hover {
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 26px rgba(28, 25, 23, 0.08);
 }
 
 .card-kicker {
   font-size: 0.8rem;
   letter-spacing: -0.01em;
-  color: #6e6e73;
+  color: #57534e;
   font-weight: 600;
   display: flex;
   justify-content: space-between;
@@ -166,39 +187,40 @@ header[data-testid="stHeader"] {
 .ticker-badge {
   font-size: 0.72rem;
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: #f5f5f7;
-  color: #6e6e73;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #ece8e0;
+  color: #57534e;
   font-variant-numeric: tabular-nums;
 }
 .card-price {
   font-size: 2.15rem;
   font-weight: 700;
-  color: #1d1d1f;
+  color: #1c1917;
   margin: 8px 0 3px 0;
   letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
 }
 .delta-up {
-  color: #1d8f34;
+  color: #15803d;
   font-weight: 600;
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 .delta-down {
-  color: #d70015;
+  color: #b91c1c;
   font-weight: 600;
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
-/* Sub-panel inside card */
+/* Warm Sand Sub-panel inside card */
 .dd-box {
   margin-top: 16px;
   padding: 13px 15px;
-  border-radius: 14px;
-  background: #f5f5f7;
+  border-radius: 15px;
+  background: var(--lux-sub);
+  border: 1px solid rgba(28, 25, 23, 0.05);
 }
 .dd-row {
   display: flex;
@@ -215,7 +237,7 @@ header[data-testid="stHeader"] {
 .bar-track {
   width: 100%;
   height: 6px;
-  background: #e2e2e7;
+  background: #e2ddd3;
   border-radius: 999px;
   overflow: hidden;
   margin: 6px 0;
@@ -226,7 +248,7 @@ header[data-testid="stHeader"] {
 }
 .meta-sub {
   font-size: 0.77rem;
-  color: #6e6e73;
+  color: #57534e;
   display: flex;
   justify-content: space-between;
   margin-top: 6px;
@@ -235,11 +257,11 @@ header[data-testid="stHeader"] {
 
 /* RSI / MFI Oscillator Card */
 .osc-card {
-  background: #ffffff;
-  border: 1px solid var(--apple-border);
-  border-radius: 20px;
+  background: var(--lux-card);
+  border: 1px solid var(--lux-border);
+  border-radius: 22px;
   padding: 20px 22px;
-  box-shadow: var(--apple-shadow);
+  box-shadow: var(--lux-shadow);
 }
 .osc-header {
   display: flex;
@@ -249,7 +271,7 @@ header[data-testid="stHeader"] {
 .osc-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #6e6e73;
+  color: #57534e;
 }
 .osc-badge {
   font-size: 0.73rem;
@@ -269,7 +291,7 @@ header[data-testid="stHeader"] {
   height: 8px;
   border-radius: 999px;
   margin: 14px 0 7px 0;
-  background: linear-gradient(90deg, #34c759 0%, #34c759 28%, #e5e5ea 45%, #e5e5ea 58%, #ff9500 74%, #ff3b30 100%);
+  background: linear-gradient(90deg, #16a34a 0%, #22c55e 28%, #ddd8ce 46%, #ddd8ce 58%, #d97706 74%, #dc2626 100%);
 }
 .osc-thumb {
   position: absolute;
@@ -277,27 +299,27 @@ header[data-testid="stHeader"] {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #ffffff;
-  border: 2.5px solid #1d1d1f;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+  background: #faf9f6;
+  border: 2.5px solid #18181b;
+  box-shadow: 0 2px 6px rgba(24, 24, 27, 0.25);
   transform: translateX(-50%);
 }
 .osc-scale {
   display: flex;
   justify-content: space-between;
   font-size: 0.71rem;
-  color: #86868b;
+  color: #78716c;
   font-variant-numeric: tabular-nums;
 }
 
 /* Agent Briefing Panel */
 .agent-panel {
-  background: #ffffff;
-  border: 1px solid var(--apple-border);
-  border-radius: 20px;
+  background: var(--lux-card);
+  border: 1px solid var(--lux-border);
+  border-radius: 22px;
   padding: 22px 26px;
   margin-bottom: 18px;
-  box-shadow: var(--apple-shadow);
+  box-shadow: var(--lux-shadow);
 }
 .agent-header {
   display: flex;
@@ -324,44 +346,50 @@ header[data-testid="stHeader"] {
   margin-top: 12px;
 }
 .signal-item {
-  background: #f5f5f7;
-  border-radius: 14px;
+  background: var(--lux-sub);
+  border: 1px solid rgba(28, 25, 23, 0.05);
+  border-radius: 15px;
   padding: 13px 15px;
   font-size: 0.84rem;
   line-height: 1.55;
-  color: #1d1d1f;
+  color: #1c1917;
 }
 .signal-tag {
   display: inline-block;
   font-size: 0.71rem;
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
   margin-bottom: 6px;
 }
 
 /* Section Title */
 .section-title {
-  font-size: 1.25rem;
+  font-size: 1.22rem;
   font-weight: 700;
   letter-spacing: -0.025em;
-  color: #1d1d1f;
-  margin: 26px 0 12px 0;
+  color: #1c1917;
+  margin: 24px 0 12px 0;
 }
 
-/* Soft Card Wrapper around Plotly Charts */
+/* Soft Warm Ivory Wrapper around Plotly Charts */
 div[data-testid="stPlotlyChart"] {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: 20px;
+  background: #faf9f6;
+  border: 1px solid rgba(28, 25, 23, 0.09);
+  border-radius: 22px;
   padding: 10px 10px 4px 10px;
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(28, 25, 23, 0.05);
 }
 
-/* Sidebar clean light style */
+/* Sidebar warm tone */
 section[data-testid="stSidebar"] {
-  background-color: #ffffff !important;
-  border-right: 1px solid rgba(0, 0, 0, 0.07);
+  background-color: #f5f3ee !important;
+  border-right: 1px solid rgba(28, 25, 23, 0.08);
+}
+
+/* Remove boxy focus ring on buttons/radios too */
+button:focus, button:focus-visible {
+  outline: none !important;
 }
 
 /* Mobile responsiveness */
@@ -372,22 +400,28 @@ section[data-testid="stSidebar"] {
     padding-right: 0.85rem !important;
   }
   .stTabs [data-baseweb="tab-list"] {
-    padding: 3px;
+    padding: 4px;
+    gap: 4px;
     margin-bottom: 12px;
   }
   .stTabs [data-baseweb="tab"] {
     height: 36px;
-    padding: 0 4px !important;
-    font-size: 0.82rem !important;
+    padding: 0 6px !important;
+    font-size: 0.8rem !important;
+  }
+  .hero-wrap {
+    padding: 18px 18px;
+    border-radius: 18px;
   }
   .hero-title {
-    font-size: 1.45rem;
+    font-size: 1.4rem;
   }
   .card-price {
     font-size: 1.85rem;
   }
   .glass-card {
     padding: 18px 18px;
+    border-radius: 18px;
   }
 }
 </style>
@@ -420,11 +454,12 @@ def render_hero_html(updated_kst: str, vix_price: float | None, vix_chg: float) 
     return _compact_html(f"""
     <div class="hero-wrap">
       <div>
+        <div style="font-size:0.72rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#d4a359; margin-bottom:4px;">PRIVATE MARKET TERMINAL</div>
         <div class="hero-title">US Market Overview</div>
         <div class="hero-sub">S&amp;P 500 · NASDAQ (RSI · MFI) · 공포·탐욕 지수 · 고점 대비 낙폭</div>
       </div>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <div class="live-pill" style="color:#6e6e73;">{vix_str}</div>
+        <div class="live-pill" style="color:#d6d3d1;">{vix_str}</div>
         <div class="live-pill">
           <span class="pulse-dot"></span>
           {updated_kst}
@@ -858,8 +893,8 @@ def build_nasdaq_chart(
     fig.update_layout(
         height=720,
         margin=dict(l=12, r=18, t=64, b=16),
-        paper_bgcolor="#ffffff",
-        plot_bgcolor="#ffffff",
+        paper_bgcolor="#faf9f6",
+        plot_bgcolor="#f5f2ec",
         font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),
         legend=dict(
             orientation="h",
@@ -962,8 +997,8 @@ def build_sp500_drawdown_chart(sp: dict, lookback_days: int = 252) -> go.Figure:
     fig.update_layout(
         height=540,
         margin=dict(l=12, r=18, t=64, b=16),
-        paper_bgcolor="#ffffff",
-        plot_bgcolor="#ffffff",
+        paper_bgcolor="#faf9f6",
+        plot_bgcolor="#f5f2ec",
         font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),
         legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="left", x=0.0, bgcolor="rgba(255,255,255,0)", font=dict(color="#6e6e73", size=12)),
         hovermode="x unified",
@@ -1010,8 +1045,8 @@ def build_fear_greed_history_chart(fg: dict) -> go.Figure | None:
         title=dict(text="CNN 공포·탐욕 지수 1년 추이", font=dict(size=14, color="#1d1d1f")),
         height=380,
         margin=dict(l=12, r=18, t=48, b=16),
-        paper_bgcolor="#ffffff",
-        plot_bgcolor="#ffffff",
+        paper_bgcolor="#faf9f6",
+        plot_bgcolor="#f5f2ec",
         font=dict(color="#1d1d1f", family="-apple-system, BlinkMacSystemFont, Pretendard, sans-serif", size=12),
         hovermode="x unified",
         hoverlabel=dict(bgcolor="#ffffff", bordercolor="#d2d2d7", font=dict(color="#1d1d1f", size=12)),
