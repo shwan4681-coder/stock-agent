@@ -438,8 +438,19 @@ button:focus, button:focus-visible {
 @media (max-width: 640px) {
   .block-container {
     padding-top: 0.65rem !important;
-    padding-left: 0.85rem !important;
-    padding-right: 0.85rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  div[data-testid="stButtonGroup"] {
+    padding: 3px;
+  }
+  div[data-testid="stButtonGroup"] > div {
+    gap: 3px !important;
+  }
+  div[data-testid="stButtonGroup"] button {
+    height: 36px !important;
+    padding: 0 3px !important;
+    font-size: 0.73rem !important;
   }
   .stTabs [data-baseweb="tab-list"] {
     padding: 4px;

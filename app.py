@@ -11,6 +11,13 @@ from agent_analyzer import (
     compute_market_buy_index,
     generate_agent_briefing,
 )
+from crash_history import (
+    CRASH_EVENTS,
+    build_crash_drawdown_chart,
+    build_recovery_duration_chart,
+    render_crash_history_table,
+    render_history_summary_cards,
+)
 from data_fetcher import load_all_market_data
 from dca_calculator import (
     STRATEGIES,
@@ -131,7 +138,7 @@ market_buy_idx = compute_market_buy_index(data)
 kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S KST")
 
 # ---------------- Top-Most Lazy Navigation (Only runs the selected page for fast Cloud load!) ----------------
-nav_options = ["📊 시장", "👑 독점주", "🧮 분할매수", "🌍 거시지표"]
+nav_options = ["📊 시장", "👑 독점주", "🧮 분할", "🌍 거시", "📜 폭락사"]
 active_page = st.segmented_control(
     "메뉴",
     options=nav_options,
@@ -252,7 +259,7 @@ if active_page == "📊 시장":
         else:
             st.info("공포·탐욕 히스토리 데이터를 일시적으로 불러오지 못했습니다.")
 
-elif active_page == "🧮 분할매수":
+elif active_page == "🧮 분할":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">🧮 고점 대비 분할 매수 계산기</div>',
         unsafe_allow_html=True,
@@ -474,7 +481,7 @@ elif active_page == "👑 독점주":
                 except Exception as exc:
                     st.error(f"분석 실패: {exc}")
 
-elif active_page == "🌍 거시지표":
+elif active_page == "🌍 거시":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">🌍 글로벌 핵심 거시 지표</div>',
         unsafe_allow_html=True,
@@ -525,6 +532,53 @@ elif active_page == "🌍 거시지표":
             width="stretch",
             theme=None,
         )
+
+elif active_page == "📜 폭락사":
+    st.markdown(
+        '<div class="section-title" style="margin-top:8px;">📜 미국 증시 역대 조정 · 폭락 &amp; 회복기간 아카이브</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "1973년 오일쇼크부터 2025년 관세 쇼크까지 S&P 500과 나스닥의 고점 대비 최대 낙폭, "
+        "저점에서 전고점 돌파까지 걸린 회복 기간, 그리고 현재 실시간 낙폭의 위치를 비교합니다."
+    )
+
+    sp_dd_now = data["sp500"]["dd_ath_pct"]
+    nq_dd_now = data["nasdaq_comp"]["dd_ath_pct"]
+
+    st.markdown(render_history_summary_cards(sp_dd_now, nq_dd_now), unsafe_allow_html=True)
+
+    hist_filter = st.radio(
+        "사건 규모 필터",
+        options=["전체 사건 (11건)", "조정 · 일반 약세장 (-14% ~ -25%)", "대형 폭락장 (-30% 이상)"],
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    if "조정 · 일반" in hist_filter:
+        shown_events = [e for e in CRASH_EVENTS if e["sp_dd"] > -30.0]
+    elif "대형 폭락" in hist_filter:
+        shown_events = [e for e in CRASH_EVENTS if e["sp_dd"] <= -30.0]
+    else:
+        shown_events = CRASH_EVENTS
+
+    st.markdown(render_crash_history_table(shown_events, sp_dd_now, nq_dd_now), unsafe_allow_html=True)
+
+    st.markdown('<div class="section-title">📊 역대 낙폭 &amp; 회복기간 시각화</div>', unsafe_allow_html=True)
+    st.plotly_chart(
+        build_crash_drawdown_chart(shown_events, sp_dd_now, nq_dd_now),
+        width="stretch",
+        theme=None,
+    )
+
+    excl_dotcom = st.checkbox(
+        "닷컴버블 나스닥(150개월) 제외하고 최근 회복기간 비교 자세히 보기",
+        value=False,
+    )
+    st.plotly_chart(
+        build_recovery_duration_chart(shown_events, exclude_dotcom=excl_dotcom),
+        width="stretch",
+        theme=None,
+    )
 
 st.caption(
     f"데이터 소스: Yahoo Finance ({sp500['symbol']}, {nasdaq['symbol']}) · {fg['source']} | "
