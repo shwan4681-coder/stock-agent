@@ -119,17 +119,17 @@ briefing = generate_agent_briefing(data)
 
 kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S KST")
 
-# ---------------- 1. Hero Header ----------------
-st.markdown(render_hero_html(kst_now, vix.get("price"), vix.get("change_pct", 0.0)), unsafe_allow_html=True)
-
-# ---------------- Main Navigation Tabs ----------------
-main_tab_dash, main_tab_dca, main_tab_monopoly = st.tabs([
-    "📊 실시간 시장 대시보드",
-    "🧮 분할 매수 계산기 (-5% ~ -30%)",
-    "👑 독점 기업 & 매수 신호",
+# ---------------- Top-Most Navigation Tabs (Mobile-First) ----------------
+main_tab_dash, main_tab_monopoly, main_tab_dca = st.tabs([
+    "📊 시장 대시보드",
+    "👑 독점·매수신호",
+    "🧮 분할 매수",
 ])
 
 with main_tab_dash:
+    # ---------------- 1. Hero Header ----------------
+    st.markdown(render_hero_html(kst_now, vix.get("price"), vix.get("change_pct", 0.0)), unsafe_allow_html=True)
+
     # ---------------- 2. Core 3-Column Overview (S&P 500 · NASDAQ · Fear & Greed) ----------------
     col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
     with col1:
@@ -186,9 +186,9 @@ with main_tab_dash:
     # ---------------- 6. Detailed Interactive Charts ----------------
     st.markdown('<div class="section-title">📊 상세 인터랙티브 차트</div>', unsafe_allow_html=True)
     tab_nq, tab_sp, tab_fg = st.tabs([
-        f"🚀 {nasdaq['name']} (가격 · RSI · MFI)",
-        "🏛️ S&P 500 (가격 · 고점 대비 낙폭)",
-        "😱 공포·탐욕 지수 1년 추이",
+        f"🚀 {nasdaq['name']}",
+        "🏛️ S&P 500",
+        "😱 공포·탐욕",
     ])
 
     with tab_nq:

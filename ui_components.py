@@ -304,6 +304,75 @@ html, body, [class*="css"] {
 /* Hide default streamlit chrome clutter */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
+
+/* Sleek mobile-first top navigation tab bar */
+.stTabs [data-baseweb="tab-list"] {
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 14px;
+  padding: 6px;
+  margin-bottom: 14px;
+  display: flex;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.stTabs [data-baseweb="tab"] {
+  flex: 1 1 0%;
+  justify-content: center;
+  height: 44px;
+  border-radius: 10px;
+  padding: 0 10px !important;
+  color: #cbd5e1 !important;
+  font-weight: 700 !important;
+  font-size: 0.92rem !important;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.18s ease;
+}
+.stTabs [data-baseweb="tab"]:hover {
+  color: #f8fafc !important;
+  background: rgba(56, 189, 248, 0.10);
+}
+.stTabs [aria-selected="true"] {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.24), rgba(99, 102, 241, 0.24)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.65) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.2);
+}
+.stTabs [data-baseweb="tab-highlight"] {
+  display: none !important;
+}
+.stTabs [data-baseweb="tab-border"] {
+  display: none !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .block-container {
+    padding-top: 0.65rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  .stTabs [data-baseweb="tab-list"] {
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 10px;
+  }
+  .stTabs [data-baseweb="tab"] {
+    height: 40px;
+    padding: 0 4px !important;
+    font-size: 0.78rem !important;
+  }
+  .hero-wrap {
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .hero-title {
+    font-size: 1.3rem;
+  }
+}
 </style>
 """
 
