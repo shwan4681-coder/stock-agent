@@ -48,7 +48,7 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 # ---------------- Sidebar Controls ----------------
 with st.sidebar:
-    st.markdown("### 설정")
+    st.markdown("### ⚙️ 설정")
 
     nasdaq_choice = st.radio(
         "나스닥 기준 지수",
@@ -83,12 +83,12 @@ with st.sidebar:
     )
     refresh_ms = refresh_map[refresh_choice]
 
-    if st.button("지금 새로고침", width="stretch"):
+    if st.button("🔄 지금 새로고침", width="stretch"):
         st.cache_data.clear()
         st.rerun()
 
     st.divider()
-    st.markdown("### AI 질의응답 (선택)")
+    st.markdown("### 🤖 AI 질의응답 (선택)")
     st.caption(
         "기본 정량 브리핑은 API 키 없이 동작합니다. "
         "추가 자연어 질문을 원하시면 Google AI Studio 무료 Gemini API 키를 입력하세요."
@@ -119,9 +119,9 @@ kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S
 
 # ---------------- Top-Most Navigation Tabs (Apple Segmented Bar) ----------------
 main_tab_dash, main_tab_monopoly, main_tab_dca = st.tabs([
-    "시장 현황",
-    "독점 기업",
-    "분할 매수",
+    "📊 시장 현황",
+    "👑 독점 기업",
+    "🧮 분할 매수",
 ])
 
 with main_tab_dash:
@@ -138,7 +138,7 @@ with main_tab_dash:
         st.markdown(render_fear_greed_card(fg), unsafe_allow_html=True)
 
     # ---------------- 3. NASDAQ RSI & MFI Spotlight ----------------
-    st.markdown('<div class="section-title">나스닥 모멘텀 및 자금흐름</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">⚡ 나스닥 모멘텀 및 자금흐름</div>', unsafe_allow_html=True)
     osc_c1, osc_c2 = st.columns(2, gap="medium")
     with osc_c1:
         st.markdown(
@@ -152,18 +152,18 @@ with main_tab_dash:
         )
 
     # ---------------- 4. Drawdown From High Comparison ----------------
-    st.markdown('<div class="section-title">고점 대비 낙폭 비교</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📉 고점 대비 낙폭 비교</div>', unsafe_allow_html=True)
     st.markdown(
         render_drawdown_comparison_html([data["sp500"], data["nasdaq_comp"], data["nasdaq_100"]]),
         unsafe_allow_html=True,
     )
 
     # ---------------- 5. Market Briefing ----------------
-    st.markdown('<div class="section-title">시장 종합 진단</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🤖 시장 종합 진단</div>', unsafe_allow_html=True)
     st.markdown(render_agent_briefing_html(briefing), unsafe_allow_html=True)
 
     # Optional Gemini interactive Q&A
-    with st.expander("현재 시장 지표에 대해 질문하기 (Gemini API 연결 시)", expanded=False):
+    with st.expander("💬 현재 시장 지표에 대해 질문하기 (Gemini API 연결 시)", expanded=False):
         user_q = st.text_input(
             "질문 입력",
             placeholder="예: 지금 나스닥 RSI와 공포지수 기준으로 분할 매수 시작해도 될까?",
@@ -182,11 +182,11 @@ with main_tab_dash:
                         st.error(f"AI 응답 오류: {exc}")
 
     # ---------------- 6. Detailed Interactive Charts ----------------
-    st.markdown('<div class="section-title">상세 차트</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📈 상세 차트</div>', unsafe_allow_html=True)
     tab_nq, tab_sp, tab_fg = st.tabs([
-        f"{nasdaq['name']}",
-        "S&P 500",
-        "공포·탐욕",
+        f"🚀 {nasdaq['name']}",
+        "🏛️ S&P 500",
+        "😱 공포·탐욕",
     ])
 
     with tab_nq:
@@ -199,7 +199,7 @@ with main_tab_dash:
                 label_visibility="collapsed",
             )
         with nq_ctrl2:
-            st.caption("우측 축에서 현재가·RSI·MFI를 확인할 수 있으며 드래그로 확대할 수 있습니다.")
+            st.caption("💡 우측 축에서 현재가·RSI·MFI를 확인할 수 있으며 드래그로 확대할 수 있습니다.")
         st.plotly_chart(
             build_nasdaq_chart(nasdaq, lookback_days=lookback_days, chart_style=nq_chart_style),
             width="stretch",
@@ -222,7 +222,7 @@ with main_tab_dash:
 
 with main_tab_dca:
     st.markdown(
-        '<div class="section-title" style="margin-top:8px;">고점 대비 분할 매수 계산기</div>',
+        '<div class="section-title" style="margin-top:8px;">🧮 고점 대비 분할 매수 계산기</div>',
         unsafe_allow_html=True,
     )
     st.caption(
@@ -353,7 +353,7 @@ with main_tab_dca:
 
 with main_tab_monopoly:
     st.markdown(
-        '<div class="section-title" style="margin-top:8px;">독점 기업 및 매수 신호</div>',
+        '<div class="section-title" style="margin-top:8px;">👑 독점 기업 및 매수 신호</div>',
         unsafe_allow_html=True,
     )
     st.caption(
@@ -372,8 +372,8 @@ with main_tab_monopoly:
             "조건 필터",
             options=[
                 f"전체 ({len(monopoly_stocks)}종목)",
-                "강력 매수만",
-                "매수·분할매수",
+                "🟢 강력 매수만",
+                "🔵 매수·분할매수",
                 "매출 CAGR 20%↑",
                 "영업이익률 전 기간 20%↑",
             ],
@@ -384,16 +384,16 @@ with main_tab_monopoly:
         sectors = ["전체 섹터"] + sorted({s["sector"] for s in monopoly_stocks})
         sel_sector = st.selectbox("섹터 필터", options=sectors, index=0, label_visibility="collapsed")
     with f_col3:
-        if st.button("재무·신호 새로고침", width="stretch"):
+        if st.button("🔄 새로고침", width="stretch"):
             scan_monopoly_universe.clear()
             st.rerun()
 
     filtered_stocks = monopoly_stocks
     if sel_sector != "전체 섹터":
         filtered_stocks = [s for s in filtered_stocks if s["sector"] == sel_sector]
-    if mono_filter == "강력 매수만":
+    if "강력 매수만" in mono_filter:
         filtered_stocks = [s for s in filtered_stocks if s["signal_code"] == "strong_buy"]
-    elif mono_filter == "매수·분할매수":
+    elif "매수·분할매수" in mono_filter:
         filtered_stocks = [s for s in filtered_stocks if s["signal_code"] in ("strong_buy", "accumulate")]
     elif "CAGR 20%" in mono_filter:
         filtered_stocks = [s for s in filtered_stocks if s["rev_cagr_pct"] is not None and s["rev_cagr_pct"] >= 20.0]
@@ -406,7 +406,7 @@ with main_tab_monopoly:
 
     # Deep Dive for selected curated stock
     if monopoly_stocks:
-        st.markdown('<div class="section-title">종목별 8대 기준 상세 진단</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">🔍 종목별 8대 기준 상세 진단</div>', unsafe_allow_html=True)
         stock_labels = [
             f"{s['name_kr']} ({s['symbol']}) · {s['signal']} · {s['moat_score']}점"
             for s in monopoly_stocks
@@ -418,7 +418,7 @@ with main_tab_monopoly:
         st.plotly_chart(build_stock_financial_chart(sel_stock), width="stretch", theme=None)
 
     # Custom US stock analyzer
-    with st.expander("목록에 없는 미국 종목 직접 분석하기 (예: PLTR, NFLX, LLY, COST, AAPL)", expanded=False):
+    with st.expander("🔎 목록에 없는 미국 종목 직접 분석하기 (예: PLTR, NFLX, LLY, COST, AAPL)", expanded=False):
         cc1, cc2, cc3, cc4 = st.columns([1.4, 1.2, 1.2, 1.0])
         with cc1:
             custom_sym = st.text_input("미국 티커 입력", value="PLTR", placeholder="예: AAPL, LLY, COST").strip().upper()

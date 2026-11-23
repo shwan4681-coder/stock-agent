@@ -208,18 +208,21 @@ def render_dca_table_html(plan: dict, currency: str) -> str:
         if r["status"] == "reached":
             badge_bg, badge_fg = "rgba(29, 143, 52, 0.10)", "#1d8f34"
             row_bg = "rgba(52, 199, 89, 0.04)"
+            icon = "✅ "
         elif r["status"] == "next":
             badge_bg, badge_fg = "rgba(0, 113, 227, 0.11)", "#0071e3"
             row_bg = "rgba(0, 113, 227, 0.04)"
+            icon = "🎯 "
         else:
             badge_bg, badge_fg = "#f5f5f7", "#6e6e73"
             row_bg = "transparent"
+            icon = "⏳ "
 
         row_htmls.append(
             f'<tr style="background:{row_bg}; border-bottom:1px solid rgba(0,0,0,0.06);">'
             f'<td style="padding:13px 12px; font-weight:700; color:#1d1d1f; font-variant-numeric:tabular-nums;">고점 대비 {r["level_label"]}</td>'
             f'<td style="padding:13px 12px; color:#1d1d1f; text-align:right; font-variant-numeric:tabular-nums;">{r["target_price"]:,.2f}</td>'
-            f'<td style="padding:13px 12px; text-align:center;"><span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.74rem; font-weight:600; background:{badge_bg}; color:{badge_fg};">{r["status_label"]}</span></td>'
+            f'<td style="padding:13px 12px; text-align:center;"><span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.74rem; font-weight:600; background:{badge_bg}; color:{badge_fg};">{icon}{r["status_label"]}</span></td>'
             f'<td style="padding:13px 12px; color:#6e6e73; text-align:right; font-variant-numeric:tabular-nums;">{r["weight_pct"]:.1f}%</td>'
             f'<td style="padding:13px 12px; font-weight:700; font-size:0.95rem; color:#0071e3; text-align:right; font-variant-numeric:tabular-nums;">{format_money(r["buy_amount"], currency)}</td>'
             f'<td style="padding:13px 12px; color:#6e6e73; text-align:right; font-variant-numeric:tabular-nums;">{format_money_short(r["cum_invested"], currency)}</td>'
