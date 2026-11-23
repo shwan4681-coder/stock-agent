@@ -206,8 +206,9 @@ if active_page == "📊 시장 현황":
         nq_ctrl1, nq_ctrl2 = st.columns([1.4, 2.6])
         with nq_ctrl1:
             nq_chart_style = st.radio(
-                "차트 스타일",
-                options=["라인 차트", "캔들 차트"],
+                "나스닥 차트 스타일",
+                options=["캔들 차트", "라인 차트"],
+                index=0,
                 horizontal=True,
                 label_visibility="collapsed",
             )
@@ -220,8 +221,19 @@ if active_page == "📊 시장 현황":
         )
 
     with tab_sp:
+        sp_ctrl1, sp_ctrl2 = st.columns([1.4, 2.6])
+        with sp_ctrl1:
+            sp_chart_style = st.radio(
+                "S&P 500 차트 스타일",
+                options=["캔들 차트", "라인 차트"],
+                index=0,
+                horizontal=True,
+                label_visibility="collapsed",
+            )
+        with sp_ctrl2:
+            st.caption("💡 고점 기준선과 -10% 조정장 / -20% 약세장 낙폭 추이를 함께 확인합니다.")
         st.plotly_chart(
-            build_sp500_drawdown_chart(sp500, lookback_days=lookback_days),
+            build_sp500_drawdown_chart(sp500, lookback_days=lookback_days, chart_style=sp_chart_style),
             width="stretch",
             theme=None,
         )

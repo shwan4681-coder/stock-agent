@@ -798,7 +798,7 @@ def _slice_period(df: pd.DataFrame, lookback_days: int) -> pd.DataFrame:
 def build_nasdaq_chart(
     idx: dict,
     lookback_days: int = 252,
-    chart_style: str = "라인 차트",
+    chart_style: str = "캔들 차트",
 ) -> go.Figure:
     """Build Apple Studio Light 3-row Plotly chart: Price+MA+ATH, RSI(14), MFI(14)."""
     sub = _slice_period(idx["df"], lookback_days)
@@ -1017,7 +1017,11 @@ def build_nasdaq_chart(
     return fig
 
 
-def build_sp500_drawdown_chart(sp: dict, lookback_days: int = 252) -> go.Figure:
+def build_sp500_drawdown_chart(
+    sp: dict,
+    lookback_days: int = 252,
+    chart_style: str = "캔들 차트",
+) -> go.Figure:
     """Build Apple Studio Light 2-row Plotly chart for S&P 500 price + Drawdown (%)."""
     sub = _slice_period(sp["df"], lookback_days)
     ath_price = sp["ath_price"]
@@ -1044,17 +1048,35 @@ def build_sp500_drawdown_chart(sp: dict, lookback_days: int = 252) -> go.Figure:
         ),
     )
 
-    fig.add_trace(
-        go.Scatter(
-            x=sub.index,
-            y=sub["Close"],
-            name="S&P 500",
-            line=dict(color="#1d1d1f", width=2.3),
-            hovertemplate="%{y:,.2f}<extra>S&P 500</extra>",
-        ),
-        row=1,
-        col=1,
-    )
+    if chart_style == "캔들 차트":
+        fig.add_trace(
+            go.Candlestick(
+                x=sub.index,
+                open=sub["Open"],
+                high=sub["High"],
+                low=sub["Low"],
+                close=sub["Close"],
+                name="S&P 500",
+                increasing_line_color="#1d8f34",
+                increasing_fillcolor="#34c759",
+                decreasing_line_color="#d70015",
+                decreasing_fillcolor="#ff3b30",
+            ),
+            row=1,
+            col=1,
+        )
+    else:
+        fig.add_trace(
+            go.Scatter(
+                x=sub.index,
+                y=sub["Close"],
+                name="S&P 500",
+                line=dict(color="#1d1d1f", width=2.3),
+                hovertemplate="%{y:,.2f}<extra>S&P 500</extra>",
+            ),
+            row=1,
+            col=1,
+        )
     fig.add_trace(
         go.Scatter(x=sub.index, y=sub["MA_50"], name="50일선", line=dict(color="#0071e3", width=1.4)),
         row=1,
@@ -1098,7 +1120,7 @@ def build_sp500_drawdown_chart(sp: dict, lookback_days: int = 252) -> go.Figure:
     x_right = sub.index[-1] + pd.Timedelta(days=max(6, int(x_span * 0.06)))
     fig.update_yaxes(range=[y_min - y_pad, y_max + y_pad], tickformat=",.0f", side="right", automargin=True, gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=1, col=1)
     fig.update_yaxes(range=[dd_min, 1.5], ticksuffix="%", side="right", automargin=True, gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11), row=2, col=1)
-    fig.update_xaxes(range=[x_left, x_right], automargin=True, gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11))
+    fig.update_xaxes(range=[x_left, x_right], automargin=True, gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11), rangeslider_visible=False)
     for ann in fig.layout.annotations:
         if ann.font is None or ann.font.color is None:
             ann.font = dict(color="#1d1d1f", size=13)
@@ -1152,7 +1174,7 @@ def build_fear_greed_history_chart(fg: dict) -> go.Figure | None:
     x_left = hist["date"].iloc[0] - pd.Timedelta(days=max(3, int(x_span * 0.03)))
     x_right = hist["date"].iloc[-1] + pd.Timedelta(days=max(6, int(x_span * 0.06)))
     fig.update_yaxes(range=[0, 100], tickvals=[0, 25, 50, 75, 100], side="right", automargin=True, gridcolor="rgba(0,0,0,0.06)", tickfont=dict(color="#6e6e73", size=11))
-    fig.update_xaxes(range=[x_left, x_right], automargin=True, gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11))
+    fig.update_xaxes(range=[x_left, x_right], automargin=True, gridcolor="rgba(0,0,0,0.04)", tickfont=dict(color="#6e6e73", size=11), rangeslider_visible=False)
     fig.update_layout(
         title=dict(text="CNN 공포·탐욕 지수 1년 추이", font=dict(size=14, color="#1d1d1f")),
         height=390,
