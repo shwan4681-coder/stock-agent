@@ -560,116 +560,260 @@ def _slice_period(df: pd.DataFrame, lookback_days: int) -> pd.DataFrame:
     return df.tail(lookback_days)
 
 
-def build_nasdaq_chart(idx: dict, lookback_days: int = 252) -> go.Figure:
-    """Build 3-row interactive Plotly chart: Price+MA+ATH, RSI(14), MFI(14)."""
+def build_nasdaq_chart(
+    idx: dict,
+    lookback_days: int = 252,
+    chart_style: str = "라인 차트",
+) -> go.Figure:
+    """Build high-contrast 3-row TradingView-style Plotly chart: Price+MA+ATH, RSI(14), MFI(14)."""
     sub = _slice_period(idx["df"], lookback_days)
     ath_price = idx["ath_price"]
+    last_price = float(sub["Close"].iloc[-1])
+    last_rsi = float(sub["RSI_14"].iloc[-1]) if pd.notna(sub["RSI_14"].iloc[-1]) else None
+    last_mfi = float(sub["MFI_14"].iloc[-1]) if pd.notna(sub["MFI_14"].iloc[-1]) else None
+
+    # Tight Y-axis range so price action fills the panel cleanly (never squished to 0!)
+    lows = [float(sub["Low"].min())]
+    highs = [float(sub["High"].max()), float(ath_price)]
+    if sub["MA_200"].notna().any():
+        lows.append(float(sub["MA_200"].dropna().min()))
+        highs.append(float(sub["MA_200"].dropna().max()))
+    y_min = min(lows)
+    y_max = max(highs)
+    y_pad = max((y_max - y_min) * 0.08, 1.0)
+
+    rsi_title = f"RSI (14) — 현재 {last_rsi:.1f}  |  30 이하 과매도 · 70 이상 과매수" if last_rsi is not None else "RSI (14)"
+    mfi_title = f"MFI (14 · 자금흐름) — 현재 {last_mfi:.1f}  |  20 이하 과매도 · 80 이상 과매수" if last_mfi is not None else "MFI (14)"
 
     fig = make_subplots(
         rows=3,
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.055,
-        row_heights=[0.52, 0.24, 0.24],
+        vertical_spacing=0.08,
+        row_heights=[0.50, 0.25, 0.25],
         subplot_titles=(
-            f"{idx['name']} ({idx['symbol']}) 가격 & 고점 기준선",
-            "RSI (14) — 30 과매도 / 70 과매수",
-            "MFI (14 · 거래량 자금흐름) — 20 과매도 / 80 과매수",
+            f"{idx['name']} ({idx['symbol']}) — 현재 {last_price:,.2f} (고점 대비 {idx['dd_ath_pct']:.2f}%)",
+            rsi_title,
+            mfi_title,
         ),
     )
 
-    # Row 1: Price + MA20 / MA50 / MA200 + ATH horizontal line
+    # Row 1: Candlestick or High-Contrast Line + MA20 / MA50 / MA200 + ATH line
+    if chart_style == "캔들 차트":
+        fig.add_trace(
+            go.Candlestick(
+                x=sub.index,
+                open=sub["Open"],
+                high=sub["High"],
+                low=sub["Low"],
+                close=sub["Close"],
+                name="주가",
+                increasing_line_color="#22c55e",
+                increasing_fillcolor="#22c55e",
+                decreasing_line_color="#ef4444",
+                decreasing_fillcolor="#ef4444",
+            ),
+            row=1,
+            col=1,
+        )
+    else:
+        fig.add_trace(
+            go.Scatter(
+                x=sub.index,
+                y=sub["Close"],
+                name="종가",
+                line=dict(color="#38bdf8", width=2.8),
+                hovertemplate="%{y:,.2f}<extra>종가</extra>",
+            ),
+            row=1,
+            col=1,
+        )
+
     fig.add_trace(
         go.Scatter(
             x=sub.index,
-            y=sub["Close"],
-            name="종가",
-            line=dict(color="#38bdf8", width=2.2),
-            fill="tozeroy",
-            fillcolor="rgba(56, 189, 248, 0.08)",
+            y=sub["MA_20"],
+            name="20일선",
+            line=dict(color="#fbbf24", width=1.5, dash="dot"),
+            hovertemplate="%{y:,.2f}<extra>MA20</extra>",
         ),
         row=1,
         col=1,
     )
     fig.add_trace(
-        go.Scatter(x=sub.index, y=sub["MA_20"], name="MA20", line=dict(color="#f59e0b", width=1.2, dash="dot")),
+        go.Scatter(
+            x=sub.index,
+            y=sub["MA_50"],
+            name="50일선",
+            line=dict(color="#c084fc", width=1.6),
+            hovertemplate="%{y:,.2f}<extra>MA50</extra>",
+        ),
         row=1,
         col=1,
     )
     fig.add_trace(
-        go.Scatter(x=sub.index, y=sub["MA_50"], name="MA50", line=dict(color="#a78bfa", width=1.3)),
-        row=1,
-        col=1,
-    )
-    fig.add_trace(
-        go.Scatter(x=sub.index, y=sub["MA_200"], name="MA200", line=dict(color="#f43f5e", width=1.4, dash="dash")),
+        go.Scatter(
+            x=sub.index,
+            y=sub["MA_200"],
+            name="200일선",
+            line=dict(color="#fb7185", width=1.8, dash="dash"),
+            hovertemplate="%{y:,.2f}<extra>MA200</extra>",
+        ),
         row=1,
         col=1,
     )
     fig.add_hline(
         y=ath_price,
         line_dash="dash",
-        line_color="rgba(248, 250, 252, 0.55)",
-        annotation_text=f"고점 {ath_price:,.0f} ({idx['dd_ath_pct']:.1f}%)",
+        line_width=1.5,
+        line_color="rgba(248, 250, 252, 0.72)",
+        annotation_text=f"  최고점 {ath_price:,.0f} ({idx['dd_ath_pct']:.1f}%)",
         annotation_position="top left",
-        annotation_font_color="#e2e8f0",
+        annotation_font=dict(color="#f8fafc", size=12),
+        annotation_bgcolor="rgba(15, 23, 42, 0.85)",
+        row=1,
+        col=1,
+    )
+    # Highlight latest price level
+    fig.add_hline(
+        y=last_price,
+        line_dash="dot",
+        line_width=1.2,
+        line_color="rgba(56, 189, 248, 0.75)",
+        annotation_text=f" 현재 {last_price:,.0f} ",
+        annotation_position="bottom right",
+        annotation_font=dict(color="#070b14", size=11),
+        annotation_bgcolor="#38bdf8",
         row=1,
         col=1,
     )
 
-    # Row 2: RSI
-    fig.add_hrect(y0=0, y1=30, fillcolor="rgba(16, 185, 129, 0.10)", line_width=0, row=2, col=1)
-    fig.add_hrect(y0=70, y1=100, fillcolor="rgba(239, 68, 68, 0.10)", line_width=0, row=2, col=1)
-    fig.add_hline(y=70, line_dash="dot", line_color="rgba(239,68,68,0.6)", row=2, col=1)
-    fig.add_hline(y=30, line_dash="dot", line_color="rgba(16,185,129,0.6)", row=2, col=1)
+    # Row 2: RSI (14)
+    fig.add_hrect(y0=0, y1=30, fillcolor="rgba(16, 185, 129, 0.16)", line_width=0, row=2, col=1)
+    fig.add_hrect(y0=70, y1=100, fillcolor="rgba(239, 68, 68, 0.16)", line_width=0, row=2, col=1)
+    fig.add_hline(y=70, line_dash="dash", line_width=1.2, line_color="#f87171", row=2, col=1)
+    fig.add_hline(y=50, line_dash="dot", line_width=1.0, line_color="rgba(148,163,184,0.45)", row=2, col=1)
+    fig.add_hline(y=30, line_dash="dash", line_width=1.2, line_color="#34d399", row=2, col=1)
     fig.add_trace(
-        go.Scatter(x=sub.index, y=sub["RSI_14"], name="RSI(14)", line=dict(color="#c084fc", width=2.0)),
+        go.Scatter(
+            x=sub.index,
+            y=sub["RSI_14"],
+            name="RSI(14)",
+            line=dict(color="#e879f9", width=2.4),
+            hovertemplate="%{y:.1f}<extra>RSI(14)</extra>",
+        ),
         row=2,
         col=1,
     )
 
-    # Row 3: MFI
-    fig.add_hrect(y0=0, y1=20, fillcolor="rgba(16, 185, 129, 0.10)", line_width=0, row=3, col=1)
-    fig.add_hrect(y0=80, y1=100, fillcolor="rgba(239, 68, 68, 0.10)", line_width=0, row=3, col=1)
-    fig.add_hline(y=80, line_dash="dot", line_color="rgba(239,68,68,0.6)", row=3, col=1)
-    fig.add_hline(y=20, line_dash="dot", line_color="rgba(16,185,129,0.6)", row=3, col=1)
+    # Row 3: MFI (14)
+    fig.add_hrect(y0=0, y1=20, fillcolor="rgba(16, 185, 129, 0.16)", line_width=0, row=3, col=1)
+    fig.add_hrect(y0=80, y1=100, fillcolor="rgba(239, 68, 68, 0.16)", line_width=0, row=3, col=1)
+    fig.add_hline(y=80, line_dash="dash", line_width=1.2, line_color="#f87171", row=3, col=1)
+    fig.add_hline(y=50, line_dash="dot", line_width=1.0, line_color="rgba(148,163,184,0.45)", row=3, col=1)
+    fig.add_hline(y=20, line_dash="dash", line_width=1.2, line_color="#34d399", row=3, col=1)
     fig.add_trace(
-        go.Scatter(x=sub.index, y=sub["MFI_14"], name="MFI(14)", line=dict(color="#2dd4bf", width=2.0)),
+        go.Scatter(
+            x=sub.index,
+            y=sub["MFI_14"],
+            name="MFI(14)",
+            line=dict(color="#2dd4bf", width=2.4),
+            hovertemplate="%{y:.1f}<extra>MFI(14)</extra>",
+        ),
         row=3,
         col=1,
     )
 
-    fig.update_yaxes(range=[0, 100], row=2, col=1, gridcolor="rgba(148,163,184,0.1)")
-    fig.update_yaxes(range=[0, 100], row=3, col=1, gridcolor="rgba(148,163,184,0.1)")
-    fig.update_yaxes(row=1, col=1, gridcolor="rgba(148,163,184,0.1)")
-    fig.update_xaxes(gridcolor="rgba(148,163,184,0.08)")
+    # Axis styling — TradingView style right-side ticks, crisp contrast
+    fig.update_yaxes(
+        range=[y_min - y_pad, y_max + y_pad],
+        tickformat=",.0f",
+        side="right",
+        gridcolor="rgba(148, 163, 184, 0.18)",
+        tickfont=dict(color="#e2e8f0", size=12),
+        row=1,
+        col=1,
+    )
+    fig.update_yaxes(
+        range=[0, 100],
+        tickvals=[0, 30, 50, 70, 100],
+        side="right",
+        gridcolor="rgba(148, 163, 184, 0.16)",
+        tickfont=dict(color="#e2e8f0", size=11),
+        row=2,
+        col=1,
+    )
+    fig.update_yaxes(
+        range=[0, 100],
+        tickvals=[0, 20, 50, 80, 100],
+        side="right",
+        gridcolor="rgba(148, 163, 184, 0.16)",
+        tickfont=dict(color="#e2e8f0", size=11),
+        row=3,
+        col=1,
+    )
+    fig.update_xaxes(
+        gridcolor="rgba(148, 163, 184, 0.12)",
+        tickfont=dict(color="#cbd5e1", size=11),
+        rangeslider_visible=False,
+    )
+    # Brighten subplot titles
+    for ann in fig.layout.annotations:
+        if ann.font is None or ann.font.color is None:
+            ann.font = dict(color="#f8fafc", size=13.5)
 
     fig.update_layout(
-        height=640,
-        margin=dict(l=12, r=12, t=38, b=12),
-        paper_bgcolor="rgba(15, 23, 42, 0.72)",
-        plot_bgcolor="rgba(7, 11, 20, 0.55)",
-        font=dict(color="#cbd5e1", family="Inter, sans-serif", size=12),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, bgcolor="rgba(0,0,0,0)"),
+        height=780,
+        margin=dict(l=16, r=20, t=72, b=20),
+        paper_bgcolor="#0b1220",
+        plot_bgcolor="#111b2e",
+        font=dict(color="#f1f5f9", family="Inter, sans-serif", size=12),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.03,
+            xanchor="left",
+            x=0.0,
+            bgcolor="rgba(15, 23, 42, 0.85)",
+            bordercolor="rgba(148, 163, 184, 0.25)",
+            borderwidth=1,
+            font=dict(color="#f1f5f9", size=12),
+        ),
         hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="#0f172a",
+            bordercolor="#38bdf8",
+            font=dict(color="#f8fafc", size=12),
+        ),
     )
     return fig
 
 
 def build_sp500_drawdown_chart(sp: dict, lookback_days: int = 252) -> go.Figure:
-    """Build 2-row interactive Plotly chart for S&P 500 price + Drawdown (%) underwater plot."""
+    """Build high-contrast 2-row interactive Plotly chart for S&P 500 price + Drawdown (%)."""
     sub = _slice_period(sp["df"], lookback_days)
     ath_price = sp["ath_price"]
+    last_price = float(sub["Close"].iloc[-1])
+
+    lows = [float(sub["Low"].min())]
+    highs = [float(sub["High"].max()), float(ath_price)]
+    if sub["MA_200"].notna().any():
+        lows.append(float(sub["MA_200"].dropna().min()))
+        highs.append(float(sub["MA_200"].dropna().max()))
+    y_min, y_max = min(lows), max(highs)
+    y_pad = max((y_max - y_min) * 0.08, 1.0)
+
+    dd_min = min(-22.0, float(sub["Drawdown_Pct"].min()) - 3.0)
 
     fig = make_subplots(
         rows=2,
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.07,
-        row_heights=[0.64, 0.36],
+        vertical_spacing=0.09,
+        row_heights=[0.62, 0.38],
         subplot_titles=(
-            "S&P 500 (^GSPC) 가격 추이 & 최고점 기준선",
-            "고점 대비 낙폭 (Drawdown %)",
+            f"S&P 500 (^GSPC) — 현재 {last_price:,.2f} (고점 대비 {sp['dd_ath_pct']:.2f}%)",
+            "고점 대비 낙폭 (Drawdown %) — -10% 조정장 · -20% 약세장",
         ),
     )
 
@@ -678,30 +822,43 @@ def build_sp500_drawdown_chart(sp: dict, lookback_days: int = 252) -> go.Figure:
             x=sub.index,
             y=sub["Close"],
             name="S&P 500",
-            line=dict(color="#10b981", width=2.2),
-            fill="tozeroy",
-            fillcolor="rgba(16, 185, 129, 0.08)",
+            line=dict(color="#34d399", width=2.8),
+            hovertemplate="%{y:,.2f}<extra>S&P 500</extra>",
         ),
         row=1,
         col=1,
     )
     fig.add_trace(
-        go.Scatter(x=sub.index, y=sub["MA_50"], name="MA50", line=dict(color="#f59e0b", width=1.3)),
+        go.Scatter(
+            x=sub.index,
+            y=sub["MA_50"],
+            name="50일선",
+            line=dict(color="#fbbf24", width=1.6),
+            hovertemplate="%{y:,.2f}<extra>MA50</extra>",
+        ),
         row=1,
         col=1,
     )
     fig.add_trace(
-        go.Scatter(x=sub.index, y=sub["MA_200"], name="MA200", line=dict(color="#f43f5e", width=1.4, dash="dash")),
+        go.Scatter(
+            x=sub.index,
+            y=sub["MA_200"],
+            name="200일선",
+            line=dict(color="#fb7185", width=1.8, dash="dash"),
+            hovertemplate="%{y:,.2f}<extra>MA200</extra>",
+        ),
         row=1,
         col=1,
     )
     fig.add_hline(
         y=ath_price,
         line_dash="dash",
-        line_color="rgba(248, 250, 252, 0.55)",
-        annotation_text=f"고점 {ath_price:,.0f} ({sp['dd_ath_pct']:.1f}%)",
+        line_width=1.5,
+        line_color="rgba(248, 250, 252, 0.72)",
+        annotation_text=f"  최고점 {ath_price:,.0f} ({sp['dd_ath_pct']:.1f}%)",
         annotation_position="top left",
-        annotation_font_color="#e2e8f0",
+        annotation_font=dict(color="#f8fafc", size=12),
+        annotation_bgcolor="rgba(15, 23, 42, 0.85)",
         row=1,
         col=1,
     )
@@ -711,64 +868,161 @@ def build_sp500_drawdown_chart(sp: dict, lookback_days: int = 252) -> go.Figure:
             x=sub.index,
             y=sub["Drawdown_Pct"],
             name="고점 대비 낙폭(%)",
-            line=dict(color="#ef4444", width=1.8),
+            line=dict(color="#f87171", width=2.2),
             fill="tozeroy",
-            fillcolor="rgba(239, 68, 68, 0.18)",
+            fillcolor="rgba(239, 68, 68, 0.22)",
+            hovertemplate="%{y:.2f}%<extra>Drawdown</extra>",
         ),
         row=2,
         col=1,
     )
-    fig.add_hline(y=-10, line_dash="dot", line_color="rgba(245,158,11,0.7)", annotation_text="-10% 조정", row=2, col=1)
-    fig.add_hline(y=-20, line_dash="dot", line_color="rgba(239,68,68,0.8)", annotation_text="-20% 약세", row=2, col=1)
+    fig.add_hline(
+        y=-10,
+        line_dash="dash",
+        line_width=1.3,
+        line_color="#fbbf24",
+        annotation_text=" -10% 조정장",
+        annotation_font=dict(color="#fbbf24", size=11),
+        row=2,
+        col=1,
+    )
+    fig.add_hline(
+        y=-20,
+        line_dash="dash",
+        line_width=1.3,
+        line_color="#ef4444",
+        annotation_text=" -20% 약세장",
+        annotation_font=dict(color="#f87171", size=11),
+        row=2,
+        col=1,
+    )
 
-    fig.update_yaxes(gridcolor="rgba(148,163,184,0.1)")
-    fig.update_xaxes(gridcolor="rgba(148,163,184,0.08)")
+    fig.update_yaxes(
+        range=[y_min - y_pad, y_max + y_pad],
+        tickformat=",.0f",
+        side="right",
+        gridcolor="rgba(148, 163, 184, 0.18)",
+        tickfont=dict(color="#e2e8f0", size=12),
+        row=1,
+        col=1,
+    )
+    fig.update_yaxes(
+        range=[dd_min, 1.5],
+        ticksuffix="%",
+        side="right",
+        gridcolor="rgba(148, 163, 184, 0.16)",
+        tickfont=dict(color="#e2e8f0", size=11),
+        row=2,
+        col=1,
+    )
+    fig.update_xaxes(
+        gridcolor="rgba(148, 163, 184, 0.12)",
+        tickfont=dict(color="#cbd5e1", size=11),
+    )
+    for ann in fig.layout.annotations:
+        if ann.font is None or ann.font.color is None:
+            ann.font = dict(color="#f8fafc", size=13.5)
+
     fig.update_layout(
-        height=470,
-        margin=dict(l=12, r=12, t=38, b=12),
-        paper_bgcolor="rgba(15, 23, 42, 0.72)",
-        plot_bgcolor="rgba(7, 11, 20, 0.55)",
-        font=dict(color="#cbd5e1", family="Inter, sans-serif", size=12),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, bgcolor="rgba(0,0,0,0)"),
+        height=580,
+        margin=dict(l=16, r=20, t=72, b=20),
+        paper_bgcolor="#0b1220",
+        plot_bgcolor="#111b2e",
+        font=dict(color="#f1f5f9", family="Inter, sans-serif", size=12),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.03,
+            xanchor="left",
+            x=0.0,
+            bgcolor="rgba(15, 23, 42, 0.85)",
+            bordercolor="rgba(148, 163, 184, 0.25)",
+            borderwidth=1,
+            font=dict(color="#f1f5f9", size=12),
+        ),
         hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="#0f172a",
+            bordercolor="#34d399",
+            font=dict(color="#f8fafc", size=12),
+        ),
     )
     return fig
 
 
 def build_fear_greed_history_chart(fg: dict) -> go.Figure | None:
-    """Build 1-year CNN Fear & Greed Index trend chart with colored sentiment zones."""
+    """Build high-contrast 1-year CNN Fear & Greed Index trend chart."""
     hist = fg.get("history")
     if hist is None or hist.empty:
         return None
 
     fig = go.Figure()
-    fig.add_hrect(y0=0, y1=25, fillcolor="rgba(239,68,68,0.11)", line_width=0, annotation_text="극단적 공포", annotation_position="top left")
-    fig.add_hrect(y0=25, y1=45, fillcolor="rgba(249,115,22,0.07)", line_width=0)
-    fig.add_hrect(y0=55, y1=75, fillcolor="rgba(34,197,94,0.07)", line_width=0)
-    fig.add_hrect(y0=75, y1=100, fillcolor="rgba(16,185,129,0.11)", line_width=0, annotation_text="극단적 탐욕", annotation_position="top left")
+    fig.add_hrect(
+        y0=0,
+        y1=25,
+        fillcolor="rgba(239,68,68,0.16)",
+        line_width=0,
+        annotation_text="  극단적 공포 (0~25)",
+        annotation_position="bottom left",
+        annotation_font=dict(color="#fca5a5", size=11),
+    )
+    fig.add_hrect(y0=25, y1=45, fillcolor="rgba(249,115,22,0.08)", line_width=0)
+    fig.add_hrect(y0=55, y1=75, fillcolor="rgba(34,197,94,0.08)", line_width=0)
+    fig.add_hrect(
+        y0=75,
+        y1=100,
+        fillcolor="rgba(16,185,129,0.16)",
+        line_width=0,
+        annotation_text="  극단적 탐욕 (75~100)",
+        annotation_position="top left",
+        annotation_font=dict(color="#6ee7b7", size=11),
+    )
 
     fig.add_trace(
         go.Scatter(
             x=hist["date"],
             y=hist["score"],
             name="Fear & Greed",
-            line=dict(color="#38bdf8", width=2.2),
-            fill="tozeroy",
-            fillcolor="rgba(56, 189, 248, 0.08)",
+            line=dict(color="#38bdf8", width=2.6),
+            hovertemplate="%{y:.1f}점<extra>공포·탐욕</extra>",
         )
     )
-    fig.add_hline(y=50, line_dash="dot", line_color="rgba(148,163,184,0.5)")
+    fig.add_hline(y=50, line_dash="dot", line_color="rgba(226,232,240,0.5)")
+    fig.add_hline(
+        y=fg["score"],
+        line_dash="dot",
+        line_width=1.2,
+        line_color=fg["color"],
+        annotation_text=f" 현재 {fg['score']:.1f} ({fg['kr_label']}) ",
+        annotation_position="bottom right",
+        annotation_font=dict(color="#070b14", size=11),
+        annotation_bgcolor=fg["color"],
+    )
 
-    fig.update_yaxes(range=[0, 100], gridcolor="rgba(148,163,184,0.1)")
-    fig.update_xaxes(gridcolor="rgba(148,163,184,0.08)")
+    fig.update_yaxes(
+        range=[0, 100],
+        tickvals=[0, 25, 45, 55, 75, 100],
+        side="right",
+        gridcolor="rgba(148, 163, 184, 0.16)",
+        tickfont=dict(color="#e2e8f0", size=12),
+    )
+    fig.update_xaxes(
+        gridcolor="rgba(148, 163, 184, 0.12)",
+        tickfont=dict(color="#cbd5e1", size=11),
+    )
     fig.update_layout(
-        title=dict(text="CNN 공포·탐욕 지수 1년 추이", font=dict(size=14, color="#f1f5f9")),
-        height=320,
-        margin=dict(l=12, r=12, t=42, b=12),
-        paper_bgcolor="rgba(15, 23, 42, 0.72)",
-        plot_bgcolor="rgba(7, 11, 20, 0.55)",
-        font=dict(color="#cbd5e1", family="Inter, sans-serif", size=12),
+        title=dict(text="CNN 공포·탐욕 지수 1년 추이", font=dict(size=14, color="#f8fafc")),
+        height=400,
+        margin=dict(l=16, r=20, t=52, b=20),
+        paper_bgcolor="#0b1220",
+        plot_bgcolor="#111b2e",
+        font=dict(color="#f1f5f9", family="Inter, sans-serif", size=12),
         hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="#0f172a",
+            bordercolor="#38bdf8",
+            font=dict(color="#f8fafc", size=12),
+        ),
         showlegend=False,
     )
     return fig

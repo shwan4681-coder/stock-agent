@@ -168,15 +168,33 @@ tab_nq, tab_sp, tab_fg = st.tabs([
 ])
 
 with tab_nq:
-    st.plotly_chart(build_nasdaq_chart(nasdaq, lookback_days=lookback_days), width="stretch")
+    nq_ctrl1, nq_ctrl2 = st.columns([1.4, 2.6])
+    with nq_ctrl1:
+        nq_chart_style = st.radio(
+            "차트 스타일",
+            options=["라인 차트", "캔들 차트"],
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+    with nq_ctrl2:
+        st.caption("💡 우측 축에서 현재가·RSI·MFI를 바로 확인할 수 있으며, 드래그로 원하는 구간을 확대할 수 있습니다.")
+    st.plotly_chart(
+        build_nasdaq_chart(nasdaq, lookback_days=lookback_days, chart_style=nq_chart_style),
+        width="stretch",
+        theme=None,
+    )
 
 with tab_sp:
-    st.plotly_chart(build_sp500_drawdown_chart(sp500, lookback_days=lookback_days), width="stretch")
+    st.plotly_chart(
+        build_sp500_drawdown_chart(sp500, lookback_days=lookback_days),
+        width="stretch",
+        theme=None,
+    )
 
 with tab_fg:
     fg_fig = build_fear_greed_history_chart(fg)
     if fg_fig is not None:
-        st.plotly_chart(fg_fig, width="stretch")
+        st.plotly_chart(fg_fig, width="stretch", theme=None)
     else:
         st.info("공포·탐욕 히스토리 데이터를 일시적으로 불러오지 못했습니다.")
 
