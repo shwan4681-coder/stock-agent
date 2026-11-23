@@ -361,37 +361,45 @@ with main_tab_monopoly:
         "워렌 버핏 4대 지표(ROE · 매출총이익률 · FCF 마진 · 부채비율) 및 실시간 매수 신호"
     )
 
-    with st.spinner("글로벌 독점·해자 우량주 12종목의 실시간 재무제표와 지표를 불러오는 중..."):
+    with st.spinner("글로벌 독점·해자 우량주 30종목의 실시간 재무제표와 매수 신호를 스캔하는 중..."):
         monopoly_stocks = scan_monopoly_universe()
 
     st.markdown(render_monopoly_summary_cards(monopoly_stocks), unsafe_allow_html=True)
 
-    f_col1, f_col2 = st.columns([3.0, 1.0])
+    f_col1, f_col2, f_col3 = st.columns([2.4, 1.2, 0.9], gap="small")
     with f_col1:
         mono_filter = st.radio(
-            "필터",
+            "조건 필터",
             options=[
-                "전체 후보 (12종목)",
-                "매수·분할매수 신호만",
-                "매출 CAGR 20% 이상",
-                "영업이익률 전 기간 20% 이상",
+                f"전체 ({len(monopoly_stocks)}종목)",
+                "강력 매수만",
+                "매수·분할매수",
+                "매출 CAGR 20%↑",
+                "영업이익률 전 기간 20%↑",
             ],
             horizontal=True,
             label_visibility="collapsed",
         )
     with f_col2:
+        sectors = ["전체 섹터"] + sorted({s["sector"] for s in monopoly_stocks})
+        sel_sector = st.selectbox("섹터 필터", options=sectors, index=0, label_visibility="collapsed")
+    with f_col3:
         if st.button("재무·신호 새로고침", width="stretch"):
             scan_monopoly_universe.clear()
             st.rerun()
 
     filtered_stocks = monopoly_stocks
-    if "매수·분할매수" in mono_filter:
-        filtered_stocks = [s for s in monopoly_stocks if s["signal_code"] in ("strong_buy", "accumulate")]
+    if sel_sector != "전체 섹터":
+        filtered_stocks = [s for s in filtered_stocks if s["sector"] == sel_sector]
+    if mono_filter == "강력 매수만":
+        filtered_stocks = [s for s in filtered_stocks if s["signal_code"] == "strong_buy"]
+    elif mono_filter == "매수·분할매수":
+        filtered_stocks = [s for s in filtered_stocks if s["signal_code"] in ("strong_buy", "accumulate")]
     elif "CAGR 20%" in mono_filter:
-        filtered_stocks = [s for s in monopoly_stocks if s["rev_cagr_pct"] is not None and s["rev_cagr_pct"] >= 20.0]
+        filtered_stocks = [s for s in filtered_stocks if s["rev_cagr_pct"] is not None and s["rev_cagr_pct"] >= 20.0]
     elif "영업이익률" in mono_filter:
         filtered_stocks = [
-            s for s in monopoly_stocks if s["op_years_total"] >= 3 and s["op_years_pass"] == s["op_years_total"]
+            s for s in filtered_stocks if s["op_years_total"] >= 3 and s["op_years_pass"] == s["op_years_total"]
         ]
 
     st.markdown(render_monopoly_table_html(filtered_stocks), unsafe_allow_html=True)
