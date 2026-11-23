@@ -117,14 +117,20 @@ briefing = generate_agent_briefing(data)
 
 kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S KST")
 
-# ---------------- Top-Most Navigation Tabs (Apple Segmented Bar) ----------------
-main_tab_dash, main_tab_monopoly, main_tab_dca = st.tabs([
-    "📊 시장 현황",
-    "👑 독점 기업",
-    "🧮 분할 매수",
-])
+# ---------------- Top-Most Lazy Navigation (Only runs the selected page for fast Cloud load!) ----------------
+nav_options = ["📊 시장 현황", "👑 독점 기업", "🧮 분할 매수"]
+active_page = st.segmented_control(
+    "메뉴",
+    options=nav_options,
+    default="📊 시장 현황",
+    selection_mode="single",
+    label_visibility="collapsed",
+    width="stretch",
+)
+if not active_page:
+    active_page = "📊 시장 현황"
 
-with main_tab_dash:
+if active_page == "📊 시장 현황":
     # ---------------- 1. Hero Header ----------------
     st.markdown(render_hero_html(kst_now, vix.get("price"), vix.get("change_pct", 0.0)), unsafe_allow_html=True)
 
@@ -220,7 +226,7 @@ with main_tab_dash:
         else:
             st.info("공포·탐욕 히스토리 데이터를 일시적으로 불러오지 못했습니다.")
 
-with main_tab_dca:
+elif active_page == "🧮 분할 매수":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">🧮 고점 대비 분할 매수 계산기</div>',
         unsafe_allow_html=True,
@@ -351,7 +357,7 @@ with main_tab_dca:
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
     st.plotly_chart(build_dca_chart(plan, currency=currency), width="stretch", theme=None)
 
-with main_tab_monopoly:
+elif active_page == "👑 독점 기업":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">👑 독점 기업 및 매수 신호</div>',
         unsafe_allow_html=True,

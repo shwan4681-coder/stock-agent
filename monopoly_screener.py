@@ -661,16 +661,15 @@ def analyze_single_stock(
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def scan_monopoly_universe() -> list[dict]:
-    """Fetch and score all curated wide-moat monopoly stocks in parallel."""
+    """Fetch and score all curated wide-moat monopoly stocks politely for Cloud stability."""
     results = []
-    with ThreadPoolExecutor(max_workers=10) as pool:
+    with ThreadPoolExecutor(max_workers=5) as pool:
         futures = {pool.submit(analyze_single_stock, sym): sym for sym in MONOPOLY_UNIVERSE}
-        for fut in as_completed(futures):
+        for fut in as_completed(futures, timeout=45):
             try:
-                results.append(fut.result())
+                results.append(fut.result(timeout=15))
             except Exception:
                 continue
-    # Sort: strong_buy -> accumulate -> watch -> filtered, then by moat_score desc
     order = {"strong_buy": 0, "accumulate": 1, "watch": 2, "filtered": 3}
     results.sort(key=lambda x: (order.get(x["signal_code"], 9), -x["moat_score"], -x["buy_points"]))
     return results

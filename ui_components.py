@@ -56,7 +56,48 @@ header[data-testid="stHeader"] {
   backdrop-filter: saturate(180%) blur(18px);
 }
 
-/* Smooth Organic Capsule Pill Navigation (ZERO boxy rectangles or focus outlines!) */
+/* Smooth Organic Capsule Pill Navigation (for segmented_control & inner tabs) */
+div[data-testid="stButtonGroup"] {
+  background: rgba(28, 25, 23, 0.06);
+  border-radius: 999px;
+  padding: 5px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(28, 25, 23, 0.06);
+}
+div[data-testid="stButtonGroup"] > div {
+  display: flex !important;
+  width: 100% !important;
+  gap: 6px !important;
+}
+div[data-testid="stButtonGroup"] button {
+  flex: 1 1 0% !important;
+  border-radius: 999px !important;
+  height: 40px !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  background: transparent !important;
+  color: #57534e !important;
+  transition: all 0.2s ease !important;
+}
+div[data-testid="stButtonGroup"] button:hover {
+  color: #1c1917 !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+div[data-testid="stButtonGroup"] button[aria-pressed="true"],
+div[data-testid="stButtonGroup"] button[kind="segmented_controlActive"] {
+  background: #18181b !important;
+  color: #faf9f6 !important;
+  box-shadow: 0 4px 12px rgba(24, 24, 27, 0.22) !important;
+}
+div[data-testid="stButtonGroup"] button:focus,
+div[data-testid="stButtonGroup"] button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .stTabs [data-baseweb="tab-list"] {
   gap: 6px;
   background: rgba(28, 25, 23, 0.06);
