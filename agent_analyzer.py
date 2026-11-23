@@ -191,6 +191,117 @@ def generate_agent_briefing(data: dict) -> dict:
     }
 
 
+def _lerp_score(val: float, best_val: float, worst_val: float, max_pts: float = 25.0) -> float:
+    """Linearly interpolate points when lower value is better (e.g. F&G, RSI, MFI, Drawdown)."""
+    if val <= best_val:
+        return max_pts
+    if val >= worst_val:
+        return 0.0
+    ratio = (worst_val - val) / (worst_val - best_val)
+    return max(0.0, min(max_pts, ratio * max_pts))
+
+
+def compute_market_buy_index(data: dict) -> dict:
+    """Compute transparent 0~100 Market Buy Recommendation Index from 4 core conditions (25 pts each).
+
+    1. CNN Fear & Greed <= 10 (25 pts)
+    2. NASDAQ RSI(14) <= 30 (25 pts)
+    3. NASDAQ MFI(14) <= 20 (25 pts)
+    4. NASDAQ Drawdown from ATH <= -20% (25 pts)
+    """
+    fg_val = float(data["fear_greed"]["score"])
+    nq = data["nasdaq"]
+    rsi_val = nq.get("rsi")
+    mfi_val = nq.get("mfi")
+    dd_val = float(nq["dd_ath_pct"])
+
+    # 1) Fear & Greed <= 10 -> 25 pts, >= 80 -> 0 pts
+    fg_pts = round(_lerp_score(fg_val, best_val=10.0, worst_val=80.0, max_pts=25.0), 1)
+    fg_met = fg_val <= 10.0
+
+    # 2) NASDAQ RSI <= 30 -> 25 pts, >= 72 -> 0 pts
+    rsi_pts = round(_lerp_score(float(rsi_val), best_val=30.0, worst_val=72.0, max_pts=25.0), 1) if rsi_val is not None else 12.5
+    rsi_met = rsi_val is not None and rsi_val <= 30.0
+
+    # 3) NASDAQ MFI <= 20 -> 25 pts, >= 80 -> 0 pts
+    mfi_pts = round(_lerp_score(float(mfi_val), best_val=20.0, worst_val=80.0, max_pts=25.0), 1) if mfi_val is not None else 12.5
+    mfi_met = mfi_val is not None and mfi_val <= 20.0
+
+    # 4) NASDAQ Drawdown <= -20% -> 25 pts, >= -1% -> 0 pts
+    dd_pts = round(_lerp_score(dd_val, best_val=-20.0, worst_val=-1.0, max_pts=25.0), 1)
+    dd_met = dd_val <= -20.0
+
+    total = int(round(fg_pts + rsi_pts + mfi_pts + dd_pts))
+    total = max(0, min(100, total))
+
+    if total >= 85:
+        grade = "🟢 강력 매수"
+        en_grade = "STRONG BUY"
+        color = "#15803d"
+        comment = "공포·과매도·고점 낙폭 조건이 집중 충족된 드문 분할 매수 기회 구간입니다."
+    elif total >= 68:
+        grade = "🔵 매수 추천"
+        en_grade = "BUY"
+        color = "#1d4ed8"
+        comment = "하락 과매도 신호가 우세합니다. 보유 시드를 구간별로 나누어 매수하기 유리한 자리입니다."
+    elif total >= 45:
+        grade = "🟡 중립 · 관망"
+        en_grade = "NEUTRAL"
+        color = "#b45309"
+        comment = "뚜렷한 저점 할인이나 과열이 아닌 중간 구간입니다. 추세를 확인하며 천천히 대응하세요."
+    elif total >= 25:
+        grade = "🟠 매수 주의"
+        en_grade = "CAUTION"
+        color = "#c2410c"
+        comment = "고점 부근이거나 투자 심리가 다소 뜨겁습니다. 신규 추격 매수는 신중해야 합니다."
+    else:
+        grade = "🔴 매수 금지"
+        en_grade = "DO NOT BUY"
+        color = "#b91c1c"
+        comment = "극심한 탐욕과 기술적 과매수 구간입니다. 신규 매수를 멈추고 현금 비중을 지키세요."
+
+    items = [
+        {
+            "label": "1. 공포·탐욕 지수",
+            "rule": "10 이하",
+            "value": f"{fg_val:.1f}",
+            "pts": fg_pts,
+            "met": fg_met,
+        },
+        {
+            "label": "2. 나스닥 RSI(14)",
+            "rule": "30 이하",
+            "value": f"{rsi_val:.1f}" if rsi_val is not None else "N/A",
+            "pts": rsi_pts,
+            "met": rsi_met,
+        },
+        {
+            "label": "3. 나스닥 MFI(14)",
+            "rule": "20 이하",
+            "value": f"{mfi_val:.1f}" if mfi_val is not None else "N/A",
+            "pts": mfi_pts,
+            "met": mfi_met,
+        },
+        {
+            "label": f"4. {nq['name']} 낙폭",
+            "rule": "-20% 이하",
+            "value": f"{dd_val:.2f}%",
+            "pts": dd_pts,
+            "met": dd_met,
+        },
+    ]
+
+    return {
+        "score": total,
+        "grade": grade,
+        "en_grade": en_grade,
+        "color": color,
+        "comment": comment,
+        "met_count": sum(1 for it in items if it["met"]),
+        "items": items,
+    }
+
+
 def ask_gemini_agent(api_key: str, question: str, data: dict, briefing: dict) -> str:
     """Optional free Gemini API Q&A using live market context (REST call, no extra SDK needed)."""
     sp = data["sp500"]

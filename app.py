@@ -6,7 +6,11 @@ from datetime import datetime, timedelta, timezone
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-from agent_analyzer import ask_gemini_agent, generate_agent_briefing
+from agent_analyzer import (
+    ask_gemini_agent,
+    compute_market_buy_index,
+    generate_agent_briefing,
+)
 from data_fetcher import load_all_market_data
 from dca_calculator import (
     STRATEGIES,
@@ -34,6 +38,7 @@ from ui_components import (
     render_fear_greed_card,
     render_hero_html,
     render_index_kpi_card,
+    render_market_buy_index_card,
     render_oscillator_card,
 )
 
@@ -114,6 +119,7 @@ nasdaq = data["nasdaq"]
 fg = data["fear_greed"]
 vix = data["vix"]
 briefing = generate_agent_briefing(data)
+market_buy_idx = compute_market_buy_index(data)
 
 kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S KST")
 
@@ -131,8 +137,9 @@ if not active_page:
     active_page = "📊 시장 현황"
 
 if active_page == "📊 시장 현황":
-    # ---------------- 1. Hero Header ----------------
+    # ---------------- 1. Hero Header + Market Buy Recommendation Index ----------------
     st.markdown(render_hero_html(kst_now, vix.get("price"), vix.get("change_pct", 0.0)), unsafe_allow_html=True)
+    st.markdown(render_market_buy_index_card(market_buy_idx), unsafe_allow_html=True)
 
     # ---------------- 2. Core 3-Column Overview (S&P 500 · NASDAQ · Fear & Greed) ----------------
     col1, col2, col3 = st.columns([1, 1, 1], gap="medium")

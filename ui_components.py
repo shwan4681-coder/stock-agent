@@ -511,6 +511,62 @@ def render_hero_html(updated_kst: str, vix_price: float | None, vix_chg: float) 
     """)
 
 
+def render_market_buy_index_card(buy_idx: dict) -> str:
+    """Render top-of-dashboard Market Buy Recommendation Index card (0~100)."""
+    score = buy_idx["score"]
+    color = buy_idx["color"]
+    chips = []
+    for it in buy_idx["items"]:
+        if it["met"]:
+            st_html = '<span style="color:#15803d; font-weight:700;">✅ 충족</span>'
+            bd = "rgba(21, 128, 61, 0.28)"
+        else:
+            st_html = f'<span style="color:#78716c; font-weight:600;">{it["pts"]:.0f}/25점</span>'
+            bd = "rgba(28, 25, 23, 0.07)"
+        chips.append(
+            f'<div style="background:#f2efe9; border:1px solid {bd}; border-radius:14px; padding:11px 13px;">'
+            f'<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#57534e; font-weight:600;">'
+            f'<span>{it["label"]}</span><span>{st_html}</span>'
+            f'</div>'
+            f'<div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:5px;">'
+            f'<span style="font-size:1.12rem; font-weight:700; color:#1c1917; font-variant-numeric:tabular-nums;">{it["value"]}</span>'
+            f'<span style="font-size:0.71rem; color:#78716c;">기준 {it["rule"]}</span>'
+            f'</div>'
+            f'</div>'
+        )
+
+    return _compact_html(f"""
+    <div class="glass-card" style="margin-bottom:18px; padding:22px 26px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+        <div>
+          <div style="font-size:0.74rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:#78716c;">현 시황 매수 추천 지수 · 4대 핵심 지표 종합</div>
+          <div style="display:flex; align-items:center; gap:12px; margin-top:6px; flex-wrap:wrap;">
+            <span style="font-size:2.35rem; font-weight:800; letter-spacing:-0.04em; color:#1c1917; font-variant-numeric:tabular-nums; line-height:1;">{score}<span style="font-size:1.05rem; font-weight:600; color:#78716c;"> / 100</span></span>
+            <span style="display:inline-flex; align-items:center; padding:6px 15px; border-radius:999px; font-size:0.94rem; font-weight:700; background:{color}16; color:{color}; border:1px solid {color}38;">{buy_idx['grade']}</span>
+            <span style="font-size:0.78rem; font-weight:600; color:#57534e; background:#ece8e0; padding:4px 10px; border-radius:999px;">핵심 조건 {buy_idx['met_count']}/4 완전 충족</span>
+          </div>
+          <div style="font-size:0.86rem; color:#57534e; margin-top:7px;">{buy_idx['comment']}</div>
+        </div>
+        <div style="min-width:250px; flex:1; max-width:360px;">
+          <div style="position:relative; height:10px; border-radius:999px; background:linear-gradient(90deg, #b91c1c 0%, #c2410c 26%, #d97706 50%, #1d4ed8 74%, #15803d 100%); margin-top:6px;">
+            <div style="position:absolute; left:{score}%; top:-4px; width:18px; height:18px; border-radius:50%; background:#faf9f6; border:3px solid #18181b; box-shadow:0 2px 8px rgba(0,0,0,0.28); transform:translateX(-50%);"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#78716c; margin-top:7px; font-weight:600;">
+            <span>매수 금지</span>
+            <span>주의</span>
+            <span>관망</span>
+            <span>매수 추천</span>
+            <span>강력 매수</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; margin-top:16px;">
+        {"".join(chips)}
+      </div>
+    </div>
+    """)
+
+
 def render_index_kpi_card(idx: dict) -> str:
     """Render minimalist Apple white card for S&P 500 or NASDAQ with Drawdown from High."""
     up = idx["change"] >= 0
