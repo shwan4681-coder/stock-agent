@@ -54,6 +54,7 @@ from ui_components import (
     render_index_kpi_card,
     render_market_buy_index_card,
     render_oscillator_card,
+    render_top_brand_bar,
 )
 
 st.set_page_config(
@@ -137,7 +138,8 @@ market_buy_idx = compute_market_buy_index(data)
 
 kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S KST")
 
-# ---------------- Top-Most Lazy Navigation (Only runs the selected page for fast Cloud load!) ----------------
+# ---------------- Top Brand Bar & Lazy Navigation ----------------
+st.markdown(render_top_brand_bar(), unsafe_allow_html=True)
 nav_options = ["📊 시장", "👑 독점주", "🧮 분할", "🌍 거시", "📜 폭락사"]
 active_page = st.segmented_control(
     "메뉴",

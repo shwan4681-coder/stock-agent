@@ -502,6 +502,16 @@ def _apple_color(hex_color: str) -> str:
     return mapping.get(hex_color.lower(), hex_color)
 
 
+def render_top_brand_bar() -> str:
+    """Render sleek single-line top brand & creator bar above navigation."""
+    return _compact_html("""
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 6px 10px 6px; flex-wrap:wrap; gap:6px;">
+      <span style="font-size:0.78rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#57534e;">US STOCK AGENT</span>
+      <span style="font-size:0.78rem; font-weight:600; color:#57534e; background:rgba(28,25,23,0.06); padding:4px 12px; border-radius:999px;">제작자 : <b style="color:#1c1917;">seokhwan</b></span>
+    </div>
+    """)
+
+
 def render_hero_html(updated_kst: str, vix_price: float | None, vix_chg: float) -> str:
     vix_str = f"VIX {vix_price:.2f} ({vix_chg:+.1f}%)" if vix_price is not None else "VIX N/A"
     return _compact_html(f"""
