@@ -140,7 +140,7 @@ kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S
 
 # ---------------- Top Brand Bar & Lazy Navigation ----------------
 st.markdown(render_top_brand_bar(), unsafe_allow_html=True)
-nav_options = ["📊 시장", "👑 독점주", "🧮 분할", "🌍 거시", "📜 폭락사"]
+nav_options = ["📊 시장", "👑 독점주", "🌍 거시", "📜 폭락사", "🧮 분할"]
 active_page = st.segmented_control(
     "메뉴",
     options=nav_options,
