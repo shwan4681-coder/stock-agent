@@ -1,0 +1,12 @@
+# Local virtual environment & tools (do not upload to GitHub)
+.venv/
+.bin/
+uv.tar.gz
+__pycache__/
+*.py[cod]
+*.pyo
+.DS_Store
+.env
+*.log
+deploy-bundle/
+stock-agent-github.zip
