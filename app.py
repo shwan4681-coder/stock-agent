@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import importlib
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
@@ -11,6 +12,9 @@ from agent_analyzer import (
     compute_market_buy_index,
     generate_agent_briefing,
 )
+import backtest_view
+if not hasattr(backtest_view, "BACKTEST_MODES"):
+    importlib.reload(backtest_view)
 from backtest_view import (
     BACKTEST_MODES,
     build_backtest_signal_chart,
