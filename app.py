@@ -69,13 +69,44 @@ from ui_components import (
 )
 
 st.set_page_config(
-    page_title="US Market Stock Agent",
+    page_title="US Stock & Seoul Real Estate Agent",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+# ---------------- Top Brand Bar + Top-Right Domain Switcher (주식 ⇄ 부동산) ----------------
+if "app_domain" not in st.session_state:
+    qp_mode = str(st.query_params.get("mode", "stock")).lower()
+    st.session_state["app_domain"] = "realestate" if qp_mode in ("realestate", "re", "seoul") else "stock"
+
+is_re_mode = st.session_state["app_domain"] == "realestate"
+brand_title = "SEOUL REAL ESTATE AGENT" if is_re_mode else "US STOCK AGENT"
+
+tb_left, tb_right = st.columns([4.8, 1.2], vertical_alignment="center")
+with tb_left:
+    st.markdown(
+        f'<div style="display:flex; align-items:center; gap:10px; padding:2px 4px; flex-wrap:wrap;">'
+        f'<span style="font-size:0.8rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:#57534e;">{brand_title}</span>'
+        f'<span style="font-size:0.75rem; font-weight:600; color:#57534e; background:rgba(28,25,23,0.06); padding:3px 11px; border-radius:999px;">제작자 : <b style="color:#1c1917;">seokhwan</b></span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+with tb_right:
+    switch_lbl = "📈 미국주식" if is_re_mode else "🏛️ 부동산"
+    if st.button(switch_lbl, type="primary", width="stretch", key="top_domain_switch_btn"):
+        next_mode = "stock" if is_re_mode else "realestate"
+        st.session_state["app_domain"] = next_mode
+        st.query_params["mode"] = next_mode
+        st.rerun()
+
+if is_re_mode:
+    from realestate.re_app import render_seoul_realestate_app
+
+    render_seoul_realestate_app()
+    st.stop()
 
 # ---------------- Sidebar Controls ----------------
 with st.sidebar:
@@ -149,8 +180,7 @@ market_buy_idx = compute_market_buy_index(data)
 
 kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S KST")
 
-# ---------------- Top Brand Bar & Lazy Navigation ----------------
-st.markdown(render_top_brand_bar(), unsafe_allow_html=True)
+# ---------------- Lazy Navigation ----------------
 nav_options = ["📊 시장현황", "👑 주식발굴", "🌍 거시지표", "📜 폭락사건", "🧮 분할매수"]
 active_page = st.segmented_control(
     "메뉴",
