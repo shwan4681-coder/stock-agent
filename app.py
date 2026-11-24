@@ -145,19 +145,19 @@ kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S
 
 # ---------------- Top Brand Bar & Lazy Navigation ----------------
 st.markdown(render_top_brand_bar(), unsafe_allow_html=True)
-nav_options = ["📊 시장", "👑 독점주", "🌍 거시", "📜 폭락사", "🧮 분할"]
+nav_options = ["📊 시장현황", "👑 주식발굴", "🌍 거시지표", "📜 폭락사건", "🧮 분할매수"]
 active_page = st.segmented_control(
     "메뉴",
     options=nav_options,
-    default="📊 시장",
+    default="📊 시장현황",
     selection_mode="single",
     label_visibility="collapsed",
     width="stretch",
 )
 if not active_page:
-    active_page = "📊 시장"
+    active_page = "📊 시장현황"
 
-if active_page == "📊 시장":
+if active_page == "📊 시장현황":
     # ---------------- 1. Hero Header + Market Buy Recommendation Index ----------------
     st.markdown(render_hero_html(kst_now, vix.get("price"), vix.get("change_pct", 0.0)), unsafe_allow_html=True)
     st.markdown(render_market_buy_index_card(market_buy_idx), unsafe_allow_html=True)
@@ -266,7 +266,7 @@ if active_page == "📊 시장":
         else:
             st.info("공포·탐욕 히스토리 데이터를 일시적으로 불러오지 못했습니다.")
 
-elif active_page == "🧮 분할":
+elif active_page == "🧮 분할매수":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">🧮 고점 대비 분할 매수 계산기</div>',
         unsafe_allow_html=True,
@@ -397,7 +397,7 @@ elif active_page == "🧮 분할":
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
     st.plotly_chart(build_dca_chart(plan, currency=currency), width="stretch", theme=None)
 
-elif active_page == "👑 독점주":
+elif active_page == "👑 주식발굴":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">👑 독점 기업 및 매수 신호</div>',
         unsafe_allow_html=True,
@@ -488,7 +488,7 @@ elif active_page == "👑 독점주":
                 except Exception as exc:
                     st.error(f"분석 실패: {exc}")
 
-elif active_page == "🌍 거시":
+elif active_page == "🌍 거시지표":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">🌍 글로벌 핵심 거시 지표</div>',
         unsafe_allow_html=True,
@@ -540,7 +540,7 @@ elif active_page == "🌍 거시":
             theme=None,
         )
 
-elif active_page == "📜 폭락사":
+elif active_page == "📜 폭락사건":
     st.markdown(
         '<div class="section-title" style="margin-top:8px;">📜 미국 증시 역대 조정 · 폭락 &amp; 회복기간 아카이브</div>',
         unsafe_allow_html=True,

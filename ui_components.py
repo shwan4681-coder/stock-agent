@@ -449,8 +449,8 @@ button:focus, button:focus-visible {
   }
   div[data-testid="stButtonGroup"] button {
     height: 36px !important;
-    padding: 0 3px !important;
-    font-size: 0.73rem !important;
+    padding: 0 2px !important;
+    font-size: 0.68rem !important;
   }
   .stTabs [data-baseweb="tab-list"] {
     padding: 4px;
