@@ -43,7 +43,7 @@ html, body, [class*="css"] {
 }
 
 .block-container {
-  padding-top: 1.05rem !important;
+  padding-top: 3.6rem !important;
   padding-bottom: 3rem !important;
   max-width: 1220px !important;
 }
@@ -52,7 +52,8 @@ html, body, [class*="css"] {
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header[data-testid="stHeader"] {
-  background: rgba(234, 230, 223, 0.85) !important;
+  height: 2.9rem !important;
+  background: rgba(234, 230, 223, 0.78) !important;
   backdrop-filter: saturate(180%) blur(18px);
 }
 
@@ -437,7 +438,7 @@ button:focus, button:focus-visible {
 /* Mobile responsiveness */
 @media (max-width: 640px) {
   .block-container {
-    padding-top: 0.65rem !important;
+    padding-top: 3.3rem !important;
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;
   }
