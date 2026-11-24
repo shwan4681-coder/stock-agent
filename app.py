@@ -12,9 +12,11 @@ from agent_analyzer import (
     generate_agent_briefing,
 )
 from backtest_view import (
+    BACKTEST_MODES,
     build_backtest_signal_chart,
     render_backtest_tables_html,
-    run_10y_buy_index_backtest,
+    render_century_highlight_strip,
+    run_buy_index_backtest,
 )
 from crash_history import (
     CRASH_EVENTS,
@@ -588,15 +590,24 @@ elif active_page == "📜 폭락사건":
     )
 
     st.markdown(
-        '<div class="section-title">🧪 현 시황 매수 추천 지수 10년 백테스트 검증 (2016 ~ 현재)</div>',
+        '<div class="section-title">🧪 현 시황 매수 추천 지수 초장기 백테스트 (10년 · 나스닥 55년 · S&amp;P 500 98년)</div>',
         unsafe_allow_html=True,
     )
     st.caption(
-        "우리가 만든 4대 지표(공포·탐욕, 나스닥 RSI·MFI, 고점 낙폭) 매수 추천 지수가 "
-        "실제 지난 10년간 나스닥 저점을 얼마나 정확히 포착했는지 자동 검증합니다."
+        "우리가 만든 4대 지표(공포·탐욕, RSI·MFI, 고점 낙폭) 매수 추천 지수를 "
+        "최근 10년, 나스닥 설립 이후 55년(1971~), S&P 500 98년(1928 대공황~) 실제 데이터로 검증한 결과입니다."
     )
-    with st.spinner("10년치 나스닥 데이터로 매수 추천 지수를 백테스팅하는 중..."):
-        bt_res = run_10y_buy_index_backtest()
+    st.markdown(render_century_highlight_strip(), unsafe_allow_html=True)
+
+    bt_mode_label = st.radio(
+        "백테스트 기간 및 지수 선택",
+        options=list(BACKTEST_MODES.keys()),
+        index=1,
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    with st.spinner(f"{bt_mode_label} 백테스트 데이터를 계산하는 중..."):
+        bt_res = run_buy_index_backtest(BACKTEST_MODES[bt_mode_label])
     st.plotly_chart(build_backtest_signal_chart(bt_res), width="stretch", theme=None)
     st.markdown(render_backtest_tables_html(bt_res), unsafe_allow_html=True)
 
