@@ -11,6 +11,11 @@ from agent_analyzer import (
     compute_market_buy_index,
     generate_agent_briefing,
 )
+from backtest_view import (
+    build_backtest_signal_chart,
+    render_backtest_tables_html,
+    run_10y_buy_index_backtest,
+)
 from crash_history import (
     CRASH_EVENTS,
     build_crash_drawdown_chart,
@@ -581,6 +586,19 @@ elif active_page == "📜 폭락사":
         width="stretch",
         theme=None,
     )
+
+    st.markdown(
+        '<div class="section-title">🧪 현 시황 매수 추천 지수 10년 백테스트 검증 (2016 ~ 현재)</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "우리가 만든 4대 지표(공포·탐욕, 나스닥 RSI·MFI, 고점 낙폭) 매수 추천 지수가 "
+        "실제 지난 10년간 나스닥 저점을 얼마나 정확히 포착했는지 자동 검증합니다."
+    )
+    with st.spinner("10년치 나스닥 데이터로 매수 추천 지수를 백테스팅하는 중..."):
+        bt_res = run_10y_buy_index_backtest()
+    st.plotly_chart(build_backtest_signal_chart(bt_res), width="stretch", theme=None)
+    st.markdown(render_backtest_tables_html(bt_res), unsafe_allow_html=True)
 
 st.caption(
     f"데이터 소스: Yahoo Finance ({sp500['symbol']}, {nasdaq['symbol']}) · {fg['source']} | "
