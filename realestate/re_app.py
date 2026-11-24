@@ -397,8 +397,8 @@ def render_seoul_realestate_app() -> None:
 
         st.markdown('<div class="section-title">🧮 내 라이프 101동 401호 감정평가액 · 예상 분양가 · 분담금 계산기</div>', unsafe_allow_html=True)
         st.caption(
-            "둔촌동 544 라이프 101동 401호 공부 실측(전용 84.65㎡ · 대지지분 34.87㎡/10.55평 · 2026 개별공시지가 838.4만/㎡ · 공동주택 공시가 5.50억 · 매수가 12.5억) "
-            "기준으로 감정평가액, 추정 비례율, 예상 일반·조합원 분양가와 추가분담금을 시뮬레이션합니다."
+            "둔촌동 544·544-1 라이프 101동 401호 공부 기준(전용 84.65㎡ · 대지지분 약 13.3평/44㎡ · 2026 개별공시지가 838.4만/㎡ · 공동주택 공시가 5.50억 · 매수가 12.5억)으로 "
+            "감정평가액, 추정 비례율, 예상 일반·조합원 분양가와 추가분담금을 시뮬레이션합니다."
         )
 
         v1, v2, v3, v4 = st.columns([1.3, 0.9, 0.9, 0.9], gap="small")
@@ -406,9 +406,9 @@ def render_seoul_realestate_app() -> None:
             appraisal_mode = st.selectbox(
                 "감정평가액 추정 방식",
                 options=[
-                    "대지지분+건물 합산 (기준안 · 약 8.45억)",
+                    "대지지분+건물 합산 (기준안 · 약 10.4억)",
+                    "평가시점 시세 74% 반영 (중립 · 약 9.25억)",
                     "2026 공시가격 × 1.35배 (보수적 · 약 7.43억)",
-                    "평가시점 시세 74% 반영 (낙관적 · 약 9.25억)",
                     "감정평가액 직접 입력",
                 ],
                 index=0,
@@ -417,29 +417,30 @@ def render_seoul_realestate_app() -> None:
         with v2:
             my_buy_eok = float(st.number_input("내 매수가 (억)", min_value=5.0, max_value=25.0, value=12.50, step=0.1, key="re_moa_buy"))
         with v3:
-            prop_rate_pct = float(st.slider("추정 비례율 (%)", min_value=90, max_value=140, value=105, step=5, key="re_moa_prop"))
+            my_land_py = float(st.number_input("내 대지지분 (평)", min_value=8.0, max_value=20.0, value=13.30, step=0.1, key="re_moa_landpy"))
         with v4:
-            gen_py_man = float(st.number_input("예상 일반분양 평당가 (만원)", min_value=3500, max_value=7500, value=5200, step=100, key="re_moa_genpy"))
+            prop_rate_pct = float(st.slider("추정 비례율 (%)", min_value=90, max_value=140, value=105, step=5, key="re_moa_prop"))
 
         s1, s2, s3, s4 = st.columns(4, gap="small")
         with s1:
             if "직접" in appraisal_mode:
-                custom_app = float(st.number_input("직접 감정평가액 (억)", min_value=4.0, max_value=15.0, value=8.5, step=0.1, key="re_moa_capp"))
+                custom_app = float(st.number_input("직접 감정평가액 (억)", min_value=4.0, max_value=15.0, value=10.4, step=0.1, key="re_moa_capp"))
                 land_unit_man = 7200.0
             else:
-                custom_app = 8.5
+                custom_app = 10.4
                 land_unit_man = float(st.number_input("종전 토지 평당가 (만원)", min_value=5000, max_value=10000, value=7200, step=200, key="re_moa_landu"))
         with s2:
-            mem_disc_pct = float(st.slider("조합원 분양 할인율 (%)", min_value=10, max_value=25, value=18, step=1, key="re_moa_disc"))
+            gen_py_man = float(st.number_input("예상 일반분양 평당가 (만원)", min_value=3500, max_value=7500, value=5200, step=100, key="re_moa_genpy"))
         with s3:
-            post_84_eok = float(st.number_input("완공 후 84㎡ 예상시세 (억)", min_value=15.0, max_value=35.0, value=23.0, step=0.5, key="re_moa_p84"))
+            mem_disc_pct = float(st.slider("조합원 분양 할인율 (%)", min_value=10, max_value=25, value=18, step=1, key="re_moa_disc"))
         with s4:
-            post_59_eok = float(st.number_input("완공 후 59㎡ 예상시세 (억)", min_value=10.0, max_value=26.0, value=17.5, step=0.5, key="re_moa_p59"))
+            post_84_eok = float(st.number_input("완공 후 84㎡ 예상시세 (억)", min_value=15.0, max_value=35.0, value=23.0, step=0.5, key="re_moa_p84"))
+        post_59_eok = round(post_84_eok * 0.76, 1)
 
         val_res = compute_life_101_401_valuation(
             buy_price_eok=my_buy_eok,
             official_price_eok=LIFE_APT_PROFILE["official_price_2026_eok"],
-            land_share_py=LIFE_APT_PROFILE["land_share_py"],
+            land_share_py=my_land_py,
             land_unit_man=land_unit_man,
             appraisal_mode=appraisal_mode,
             custom_appraisal_eok=custom_app,

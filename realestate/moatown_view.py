@@ -33,22 +33,22 @@ def _compact(html: str) -> str:
 LIFE_APT_PROFILE = {
     "apt_name": "둔촌동 라이프아파트",
     "unit_label": "101동 401호",
-    "address": "서울시 강동구 둔촌동 544 (풍성로65길 29)",
-    "lot_no": "둔촌동 544",
+    "address": "서울시 강동구 둔촌동 544 · 544-1 일원 (풍성로65길 29)",
+    "lot_no": "둔촌동 544 외 (다필지 합산)",
     "lawd_cd": "11740",
     "build_year": 1993,
     "build_month": 3,
     "age_years": 33,
     "households": 78,
     "max_floors": 12,
-    "total_land_m2": 2719.6,            # 단지 전체 대지면적 2,719.6㎡ (약 822.7평)
+    "total_land_m2": 3662.0,            # 용적률 산정 연면적(7,360.37㎡) ÷ 용적률(201%) ≈ 3,662㎡ (약 1,108평, 다필지)
     "exclu_m2": 84.65,                  # 101동 전용 84.6~84.7㎡ (공급 28평형)
     "supply_py": 28.0,
-    "land_share_m2": 34.87,             # 101동 대지지분 약 34.87㎡ (10.55평)
-    "land_share_py": 10.55,
+    "land_share_m2": 44.0,              # 다필지 합산 기준 84㎡ 대지지분 약 43~44㎡ (약 13.3평 · 상가 제외)
+    "land_share_py": 13.30,
     "land_official_per_m2_won": 8_384_000,   # 2026년 둔촌동 544 개별공시지가 8,384,000원/㎡
     "land_official_per_py_man": 2771.6,      # 평당 약 2,772만원
-    "land_official_total_eok": 2.92,         # 34.87㎡ × 8,384,000원 = 약 2.92억
+    "land_official_total_eok": 3.69,         # 44.0㎡ × 8,384,000원 = 약 3.69억
     "official_price_2026_eok": 5.50,         # 2026년 84㎡ 공동주택 공시가격 5.31~5.74억 (401호 추정 5.50억)
     "official_price_range_str": "5.31억 ~ 5.74억",
     "far_pct": 201,
@@ -172,12 +172,12 @@ CURATED_ARTICLES: dict[str, list[dict]] = {
 # ==============================================================================
 def compute_life_101_401_valuation(
     buy_price_eok: float = 12.50,
-    official_price_eok: float = 5.31,
-    land_share_py: float = 10.56,
+    official_price_eok: float = 5.50,
+    land_share_py: float = 13.30,
     land_unit_man: float = 7200.0,
     bldg_val_eok: float = 0.85,
     appraisal_mode: str = "대지지분+건물 합산 (기준안)",
-    custom_appraisal_eok: float = 8.50,
+    custom_appraisal_eok: float = 10.40,
     prop_rate_pct: float = 105.0,
     gen_py_price_man: float = 5200.0,
     member_discount_pct: float = 18.0,
@@ -238,6 +238,8 @@ def compute_life_101_401_valuation(
 
     return {
         "buy_price_eok": buy_price_eok,
+        "land_share_py": land_share_py,
+        "land_share_m2": land_share_py * 3.3058,
         "appraisal_eok": appraisal_eok,
         "est_by_official": est_by_official,
         "est_by_land": est_by_land,
@@ -325,7 +327,7 @@ def render_moatown_hero(live_price: float, buy_price: float, is_live_tx: bool) -
         <div style="font-size:0.73rem; letter-spacing:0.09em; color:#a8a29e; font-weight:700;">DUNCHON 2-DONG UNIFIED MOATOWN × LIFE APT 101-401</div>
         <div style="font-size:1.52rem; font-weight:800; letter-spacing:-0.03em; margin-top:4px;">둔촌2동 통합 모아타운 &amp; 라이프아파트 101동 401호</div>
         <div style="font-size:0.82rem; color:#d6d3d1; margin-top:4px;">
-          {LIFE_APT_PROFILE['address']} · 전용 {LIFE_APT_PROFILE['exclu_m2']:.2f}㎡ · 대지지분 <b>34.87㎡(10.55평)</b> · 2026 개별공시지가 <b>838.4만/㎡</b> · 공동주택 공시가 <b>5.31~5.74억</b>
+          {LIFE_APT_PROFILE['address']} · 전용 {LIFE_APT_PROFILE['exclu_m2']:.2f}㎡ · 대지지분 <b>약 44㎡(13.3평)</b> · 2026 개별공시지가 <b>838.4만/㎡</b> · 공동주택 공시가 <b>5.31~5.74억</b>
         </div>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -351,7 +353,7 @@ def render_valuation_summary_cards(val: dict) -> str:
     return _compact(f"""
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:13px; margin:10px 0 16px 0;">
       <div class="glass-card" style="padding:17px 19px;">
-        <div class="card-kicker"><span>101동 401호 예상 감정평가액</span><span class="ticker-badge">대지 34.87㎡(10.55평)</span></div>
+        <div class="card-kicker"><span>101동 401호 예상 감정평가액</span><span class="ticker-badge">대지 {val['land_share_m2']:.1f}㎡({val['land_share_py']:.2f}평)</span></div>
         <div style="font-size:1.72rem; font-weight:800; color:#1c1917; margin:6px 0 2px 0; font-variant-numeric:tabular-nums;">약 {val['appraisal_eok']:.2f}억</div>
         <div style="font-size:0.75rem; color:#57534e;">공시가×1.35 {val['est_by_official']:.2f}억 · 지분합산 {val['est_by_land']:.2f}억 · 시세74% {val['est_by_market_75']:.2f}억</div>
       </div>
@@ -415,12 +417,12 @@ def render_presale_comparison_table(val: dict) -> str:
         <tbody>{"".join(rows)}</tbody>
       </table>
       <div style="margin-top:12px; padding:11px 14px; border-radius:12px; background:#f2efe9; font-size:0.78rem; color:#57534e; line-height:1.55;">
-        <b style="color:#1c1917;">💡 둔촌동 544 라이프아파트 101동 401호 공부 실측 근거:</b>
-        전체 대지면적 <b>2,719.6㎡ ÷ 78세대 = 대지지분 약 34.87㎡ (10.55평)</b> ·
-        2026년 <b>개별공시지가 8,384,000원/㎡</b> (평당 2,772만 원 · 공시 토지가액 2.92억) ·
-        2026년 <b>공동주택 공시가격 5.31억~5.74억</b> (401호 추정 5.50억) 기준입니다.
-        현 공시가격 기준(×1.35) 보수적 추정 <b>~7.43억</b>, 대지지분 시세·건물 합산 기준안 <b>~8.45억</b>,
-        2027~28년 감정 시점 시세(12.5억) 반영 시 <b>~9.25억</b> 범위를 슬라이더로 비교해 보세요.
+        <b style="color:#1c1917;">💡 둔촌동 544·544-1 라이프아파트 101동 401호 공부 실측 근거:</b>
+        건축물대장 용적률 산정 연면적(<b>7,360.37㎡</b>) ÷ 용적률(<b>201%</b>) = 다필지 합산 대지 약 <b>3,662㎡(1,108평)</b> →
+        상가 지분 제외 시 전용 84㎡ 대지지분은 <b>약 43~44㎡ (13.1~13.5평)</b>입니다.
+        *(일부 플랫폼에 뜨는 10.55평은 대표지번 544번지 단일필지 2,719.6㎡만 단순 나눈 수치)* ·
+        2026년 <b>개별공시지가 8,384,000원/㎡</b>(평당 2,772만) · <b>공동주택 공시가격 5.31억~5.74억</b>.
+        등기부등본상 소수점 대지지분을 위 입력칸에 직접 넣으시면 감정가·분담금이 즉시 정밀 재계산됩니다.
       </div>
     </div>
     """)
